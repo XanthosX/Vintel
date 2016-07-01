@@ -26,7 +26,7 @@ import traceback
 from logging.handlers import RotatingFileHandler
 from logging import StreamHandler
 
-from PyQt4 import QtGui
+from PyQt5 import QtGui, QtWidgets
 from vi import version
 from vi.ui import viui, systemtray
 from vi.cache import cache
@@ -53,6 +53,9 @@ backGroundColor = "#c6d9ec"
 
 if __name__ == "__main__":
 
+    # Setup the application object (must be done before using QtWidgets when checking log directory)
+    app = QtWidgets.QApplication(sys.argv)
+
     # Set up paths
     chatLogDirectory = ""
     if len(sys.argv) > 1:
@@ -64,6 +67,9 @@ if __name__ == "__main__":
                                       "p_drive", "User", "My Documents", "EVE", "logs", "Chatlogs")
         elif sys.platform.startswith("linux"):
             chatLogDirectory = os.path.join(os.path.expanduser("~"), "EVE", "logs", "Chatlogs")
+            if not os.path.exists(chatLogDirectory):
+                # Default path created by EveLauncher:  https://forums.eveonline.com/default.aspx?g=posts&t=482663
+                chatLogDirectory = os.path.join(os.path.expanduser("~"), "Documents","EVE", "logs", "Chatlogs")
         elif sys.platform.startswith("win32") or sys.platform.startswith("cygwin"):
             import ctypes.wintypes
             buf = ctypes.create_unicode_buffer(ctypes.wintypes.MAX_PATH)
@@ -72,7 +78,7 @@ if __name__ == "__main__":
             chatLogDirectory = os.path.join(documentsPath, "EVE", "logs", "Chatlogs")
     if not os.path.exists(chatLogDirectory):
         # None of the paths for logs exist, bailing out
-        QtGui.QMessageBox.critical(None, "No path to Logs", "No logs found at: " + chatLogDirectory, "Quit")
+        QtWidgets.QMessageBox.critical(None, "No path to Logs", "No logs found at: " + chatLogDirectory, QtWidgets.QMessageBox.Close)
         sys.exit(1)
 
     # Setting local directory for cache and logging
@@ -85,9 +91,8 @@ if __name__ == "__main__":
     if not os.path.exists(vintelLogDirectory):
         os.mkdir(vintelLogDirectory)
 
-    # Setup the application object, display splash screen
-    app = QtGui.QApplication(sys.argv)
-    splash = QtGui.QSplashScreen(QtGui.QPixmap(resourcePath("vi/ui/res/logo.png")))
+    # Display splash screen
+    splash = QtWidgets.QSplashScreen(QtGui.QPixmap(resourcePath("vi/ui/res/logo.png")))
 
     vintelCache = Cache()
     logLevel = vintelCache.getFromCache("logging_level")
