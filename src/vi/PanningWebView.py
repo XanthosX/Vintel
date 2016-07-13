@@ -29,6 +29,13 @@ class PanningWebView(QWebView if MainWindow.oldStyleWebKit else QWebEngineView):
 
 
     def mousePressEvent(self, mouseEvent):
+        
+        # Ignore if user is using the scrollbars
+        if mouseEvent.buttons() == Qt.LeftButton and \
+        (self.page().mainFrame().scrollBarGeometry(Qt.Horizontal).contains(mouseEvent.pos()) or \
+        self.page().mainFrame().scrollBarGeometry(Qt.Vertical).contains(mouseEvent.pos())):
+            return super(PanningWebView, self).mousePressEvent(mouseEvent)
+            
         if self.ignored.count(mouseEvent):
             self.ignored.remove(mouseEvent)
             return super(PanningWebView, self).mousePressEvent(mouseEvent)
