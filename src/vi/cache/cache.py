@@ -21,6 +21,7 @@ import sqlite3
 import threading
 import time
 import six
+import sys
 if six.PY2:
     def to_blob(x):
         return buffer(str(x))
@@ -30,7 +31,7 @@ else:
     def to_blob(x):
         return x
     def from_blob(x):
-        return x
+        return x[0][0]
 from vi.cache.dbstructure import updateDatabase
 
 
@@ -73,7 +74,7 @@ class Cache(object):
         updateDatabase(version, self.con)
 
     def putIntoCache(self, key, value, maxAge=60 * 60 * 24 * 3):
-        """ Putting something in the cache maxAge is maximum age in seconds
+        """ Putting something in the cache maxAge is maximum age in seconds, default is 3 days
         """
         with Cache.SQLITE_WRITE_LOCK:
             query = "DELETE FROM cache WHERE key = ?"
@@ -95,6 +96,32 @@ class Cache(object):
             return None
         else:
             return founds[0][1]
+
+    def getConfigValue(self, key):
+        """ Retrieve a config value from cache that never expires
+        """
+        return self.getFromCache(key, True)
+
+    def saveConfigValue(self, key, value):
+        """ Save a config value to cache that never expires
+        """
+        return self.putIntoCache(key, value, sys.maxsize)
+
+    def deleteFromCache(self, key):
+        """ Deleteing from cache
+        """
+        with Cache.SQLITE_WRITE_LOCK:
+            query = "DELETE FROM cache WHERE key = ?"
+            self.con.execute(query, (key,))
+            self.con.commit()
+
+    def flush(self):
+        """ Flush non config items from cache
+        """
+        with Cache.SQLITE_WRITE_LOCK:
+            query = "DELETE FROM cache WHERE maxAge < ?"
+            self.con.execute(query, (sys.maxsize,))
+            self.con.commit()
 
     def putPlayerName(self, name, status):
         """ Putting a playername into the cache
@@ -136,8 +163,8 @@ class Cache(object):
         if len(founds) == 0:
             return None
         else:
-            # dats is buffer, we convert it back to str
-            data = from_blob(founds[0][0])
+            # data is buffer, we convert it back to str
+            data = from_blob(founds)
             return data
 
     def removeAvatar(self, name):

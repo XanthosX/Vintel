@@ -6,7 +6,7 @@
 
 Visual intel chat analysis, planning and notification application for [EVE Online](http://www.eveonline.com). Gathers status through in-game intelligence channels on all known hostiles and presents all the data on a [dotlan](http://evemaps.dotlan.net/map/Cache#npc24) generated regional map. The map is annotated in real-time as players report intel in monitored chat channels.
 
-Vintel is written with Python 2.7, using PyQt4 for the application presentation layer, BeautifulSoup4 for SVG parsing, and Pyglet for audio playback.
+Vintel is written with Python 2.7, using PyQt5 for the application presentation layer, BeautifulSoup4 for SVG parsing, and Pyglet for audio playback.
 
 ### News
 _The current release version of Vintel [can be found here](https://github.com/Xanthos-Eve/vintel/releases). Both Mac and Windows distributions are now available for download with this release._
@@ -73,6 +73,22 @@ pyglet is used to play the sound – If it is not available the sound option wil
 - Requests 2
 https://pypi.python.org/pypi/requests
 - Six for python 3 compatibility https://pypi.python.org/pypi/six
+
+## Note for windows users
+
+The anaconda python package will come with most of what you need [download](https://www.continuum.io/downloads#windows).
+vintel compilation has been tested with 64 bit anaconda2 v4.2.0 for python 2.7 on windows 10.
+
+You will need to run this command to install the pyglet package.  If you installed anaconda for all
+users, you may need to run them in an *admin* anaconda prompt.
+
+```
+pip install pyglet
+```
+
+## Note for cygwin users
+
+pyglet doesn't currently work under cygwin.  Skip installing it or pip uninstall if it causes problems.
 
 ## Building the Vintel Standalone Package
 
