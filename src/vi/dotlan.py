@@ -498,7 +498,7 @@ class System(object):
                 if calcValue > 255:
                     calcValue = 255
                     self.secondLine["style"] = "fill: #008100;"
-                if minutes > 1 and self.sovShown is False:
+                if minutes > 30 and self.sovShown is False:
 					self.SovShown = True
 					self.secondLine.string = self.sovData["name"]
 					try:
