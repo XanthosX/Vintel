@@ -79,6 +79,8 @@ class Application(QApplication):
             # None of the paths for logs exist, bailing out
             QMessageBox.critical(None, "No path to Logs", "No logs found at: " + chatLogDirectory, "Quit")
             sys.exit(1)
+		
+        print "Logs dir: %s" % chatLogDirectory
 
         # Setting local directory for cache and logging
         vintelDirectory = os.path.join(os.path.dirname(os.path.dirname(chatLogDirectory)), "vintel")

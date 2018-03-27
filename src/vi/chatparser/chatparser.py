@@ -202,16 +202,24 @@ class ChatParser(object):
         # EvE names the file like room_20140913_200737.txt, so we don't need
         # the last 20 chars
         filename = os.path.basename(path)
-        roomname = filename[:-20]
+        roomname = str(filename[:-20])
+        if roomname.find('[') > -1:
+            roomname = roomname[0:roomname.find('[')-1]
+			
+        print "Room name: %s" % roomname
         if path not in self.fileData:
             # seems eve created a new file. New Files have 12 lines header
             self.fileData[path] = {"lines": 13}
         oldLength = self.fileData[path]["lines"]
         lines = self.addFile(path)
+		
         if path in self.ignoredPaths:
+            print "Path in ignored paths"
             return []
+
         for line in lines[oldLength - 1:]:
             line = line.strip()
+            line = line.encode('ascii', 'ignore')
             if len(line) > 2:
                 message = None
                 if roomname in LOCAL_NAMES:

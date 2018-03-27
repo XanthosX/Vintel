@@ -769,6 +769,7 @@ class MainWindow(QtGui.QMainWindow):
 
 
     def logFileChanged(self, path):
+        print "Log changed: %s" % path 
         messages = self.chatparser.fileModified(path)
         for message in messages:
             # If players location has changed
