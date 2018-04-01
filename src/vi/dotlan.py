@@ -119,6 +119,15 @@ class Map(object):
             for element in symbol.select(".sys"):
                 name = element.select("text")[0].text.strip().upper()
                 mapCoordinates = {}
+                sov = {}				
+                sovData = element.select("text")[1].text.strip().upper()
+                try:
+				    sov["name"] = sovData[0:(sovData.index('(')-1)]
+				    sov["sov_level"] = sovData[sovData.index('(')+1:len(sovData)-1]
+                except:
+				    # If system SOV is NPC index isn't set
+				    sov["name"] = sovData
+					
                 for keyname in ("x", "y", "width", "height"):
                     mapCoordinates[keyname] = float(uses[symbolId][keyname])
                 mapCoordinates["center_x"] = (mapCoordinates["x"] + (mapCoordinates["width"] / 2))
@@ -127,8 +136,9 @@ class Map(object):
                     transform = uses[symbolId]["transform"]
                 except KeyError:
                     transform = "translate(0,0)"
-                systems[name] = System(name, element, self.soup, mapCoordinates, transform, systemId)
+                systems[name] = System(name, element, self.soup, mapCoordinates, transform, systemId, sov)
         return systems
+	
 
     def _prepareSvg(self, soup, systems):
         svg = soup.select("svg")[0]
@@ -291,7 +301,7 @@ class System(object):
     UNKNOWN_COLOR = "#FFFFFF"
     CLEAR_COLOR = "#59FF6C"
 
-    def __init__(self, name, svgElement, mapSoup, mapCoordinates, transform, systemId):
+    def __init__(self, name, svgElement, mapSoup, mapCoordinates, transform, systemId, sovData):
         self.status = states.UNKNOWN
         self.name = name
         self.svgElement = svgElement
@@ -301,6 +311,8 @@ class System(object):
         self.secondLine = svgElement.select("text")[1]
         self.lastAlarmTime = 0
         self.messages = []
+        self.sovData = sovData
+        self.sovShown = False
         self.setStatus(states.UNKNOWN)
         self.__locatedCharacters = []
         self.backgroundColor = "#FFFFFF"
@@ -440,8 +452,15 @@ class System(object):
             self.secondLine["style"] = "fill: #000000;"
         elif newStatus == states.UNKNOWN:
             self.setBackgroundColor(self.UNKNOWN_COLOR)
-            # second line in the rects is reserved for the clock
-            self.secondLine.string = "?"
+            # second line in the rects is reserved for the clock and SOV
+            if self.sovShown is False:
+				self.SovShown = True
+				self.secondLine.string = self.sovData["name"]
+				try:
+				    self.secondLine.string += " (" + self.sovData["sov_level"] + ")"
+				except KeyError:
+				    pass # System is NPC owned
+				
             self.secondLine["style"] = "fill: #000000;"
         if newStatus not in (states.NOT_CHANGE, states.REQUEST):  # unknown not affect system status
             self.status = newStatus
@@ -473,15 +492,26 @@ class System(object):
             seconds = int(diff - minutes * 60)
             string = "{m:02d}:{s:02d}".format(m=minutes, s=seconds)
             if self.status == states.CLEAR:
+				
                 secondsUntilWhite = 10 * 60
                 calcValue = int(diff / (secondsUntilWhite / 255.0))
                 if calcValue > 255:
                     calcValue = 255
                     self.secondLine["style"] = "fill: #008100;"
-                string = "clr: {m:02d}:{s:02d}".format(m=minutes, s=seconds)
-                self.setBackgroundColor("rgb({r},{g},{b})".format(r=calcValue, g=255, b=calcValue))
-            self.secondLine.string = string
-
+                if minutes > 30 and self.sovShown is False:
+					self.SovShown = True
+					self.secondLine.string = self.sovData["name"]
+					try:
+						self.secondLine.string += " (" + self.sovData["sov_level"] + ")"
+					except KeyError:
+						pass # System is NPC owned
+                else:
+                    self.sovShown = False					
+                    string = "clr: {m:02d}:{s:02d}".format(m=minutes, s=seconds)
+                    self.setBackgroundColor("rgb({r},{g},{b})".format(r=calcValue, g=255, b=calcValue))
+                    self.secondLine.string = string
+	
+        
 
 def convertRegionName(name):
     """

@@ -2,20 +2,23 @@
 <p align="center">
   <img align="middle" src="src/vi/ui/res/logo.png">
 </p>
-# Welcome To Vintel
+# Welcome To Vintel+
 
-Visual intel chat analysis, planning and notification application for [EVE Online](http://www.eveonline.com). Gathers status through in-game intelligence channels on all known hostiles and presents all the data on a [dotlan](http://evemaps.dotlan.net/map/Cache#npc24) generated regional map. The map is annotated in real-time as players report intel in monitored chat channels.
+## Features
+Update to 2.0.0
 
-Vintel is written with Python 2.7, using PyQt4 for the application presentation layer, BeautifulSoup4 for SVG parsing, and Pyglet for audio playback.
+## Bug fix
+Chatlog problem
 
-### News
-_The current release version of Vintel [can be found here](https://github.com/Xanthos-Eve/vintel/releases). Both Mac and Windows distributions are now available for download with this release._
+## What is Vintel+
 
-Keep up on the latest at the [wiki](https://github.com/Xanthos-Eve/vintel/wiki) or visit our [issues](https://github.com/Xanthos-Eve/vintel/issues) page to see what bugs and features are in the queue.
+Visual intel chat analysis , planning and notification application for [EVE Online](http://www.eveonline.com). Gathers status through in-game intelligence channels on all known hostiles and presents all the data on a [dotlan](http://evemaps.dotlan.net/map/Cache#npc24) generated regional map. The map is annotated in real-time as players report intel in monitored chat channels.
 
-## Screenshot
+Vintel+ is written with Python 2.7, using PyQt4 for the application presentation layer, BeautifulSoup4 for SVG parsing, and Pyglet for audio playback.
 
-![](https://github.com/Xanthos-Eve/vintel/blob/master/src/docs/screenshot.png)
+## Original project
+
+Vintel+ is a fork => [Vintel original project](https://github.com/Xanthos-Eve/vintel/issues)
 
 ## Features
 
@@ -93,10 +96,6 @@ The most likely cause of this is that pyglet is not installed.
 
 The .exe ships with the complete environment and needed libs. You could save some space using the the source code instead.
 
-**What platforms are supported?**
-
-Vintel runs on Mac (OS X), Windows and Linux. Mac and Windows standalone packages are provided with each release. Linux users are advised to install all the requirements listed above then download and run from source.
-
 **What file system permissions does Vintel need?**
 
 - It reads your EVE chatlogs
@@ -143,11 +142,3 @@ Do not use the standalone EXE, install the environment and use the sourcecode di
 **Vintel is misbehaving and I dont know why - how can I easily help diagnose problems with Vintel**
 
 Vintel writes its own set of logs to the \Documents\EVE\vintel\vintel directory. A new log is created as the old one fills up to its maximum size setting. Each entry inside the log file is time-stamped. These logs are emitted in real-time so you can watch the changes to the file as you use the app.
-
-**I love Vintel - how can I help?**
-
-If you are technically inclined and have a solid grasp of Python, [contact the project maintainer via email](mailto:xanthos.eve@gmail.com) to see how you can best help out. Alternatively you can find something you want to change and create a pull request to have your changes reviewed and potentially added to the codebase. There have been several great contributions made this way!
-
-**I'm not a coder, how can I help?**
-
-Your feedback is needed! Use the program for a while, then come back [here and create issues](https://github.com/Xanthos-Eve/vintel/issues). Record anything you think about Vintel - bugs, frustrations, and ideas to make it better.
