@@ -26,13 +26,13 @@ import traceback
 from logging.handlers import RotatingFileHandler
 from logging import StreamHandler
 
-from PyQt4 import QtGui
+from PyQt5 import QtGui, QtWidgets
 from vi import version
 from vi.ui import viui, systemtray
 from vi.cache import cache
 from vi.resources import resourcePath
 from vi.cache.cache import Cache
-from PyQt4.QtGui import QApplication, QMessageBox
+from PyQt5.QtWidgets import QApplication, QMessageBox
 
 
 def exceptHook(exceptionType, exceptionValue, tracebackObject):
@@ -58,8 +58,12 @@ class Application(QApplication):
 
         # Set up paths
         chatLogDirectory = ""
+        gameLogDirectory = ""
+
         if len(sys.argv) > 1:
             chatLogDirectory = sys.argv[1]
+        if len(sys.argv) > 2:
+            gameLogDirectory = sys.argv[2] 		    
 
         if not os.path.exists(chatLogDirectory):
             if sys.platform.startswith("darwin"):
@@ -80,7 +84,28 @@ class Application(QApplication):
             QMessageBox.critical(None, "No path to Logs", "No logs found at: " + chatLogDirectory, "Quit")
             sys.exit(1)
 		
-        print "Logs dir: %s" % chatLogDirectory
+        print("Logs dir: %s" % chatLogDirectory)
+
+        if not os.path.exists(gameLogDirectory):
+            if sys.platform.startswith("darwin"):
+                gameLogDirectory = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "logs", "Gamelogs")
+                if not os.path.exists(gameLogDirectory):
+                    gameLogDirectory = os.path.join(os.path.expanduser("~"), "Library", "Application Support", "Eve Online",
+                                          "p_drive", "User", "My Documents", "EVE", "logs", "Gamelogs")
+            elif sys.platform.startswith("linux"):
+                gameLogDirectory = os.path.join(os.path.expanduser("~"), "EVE", "logs", "Gamelogs")
+            elif sys.platform.startswith("win32") or sys.platform.startswith("cygwin"):
+                import ctypes.wintypes
+                buf = ctypes.create_unicode_buffer(ctypes.wintypes.MAX_PATH)
+                ctypes.windll.shell32.SHGetFolderPathW(0, 5, 0, 0, buf)
+                documentsPath = buf.value
+                gameLogDirectory = os.path.join(documentsPath, "EVE", "logs", "Gamelogs")
+        if not os.path.exists(gameLogDirectory):
+            # None of the paths for logs exist, bailing out
+            QMessageBox.critical(None, "No path to Logs", "No logs found at: " + gameLogDirectory, "Quit")
+            sys.exit(1)
+		
+        print("Game logs dir: %s" % gameLogDirectory)
 
         # Setting local directory for cache and logging
         vintelDirectory = os.path.join(os.path.dirname(os.path.dirname(chatLogDirectory)), "vintel")
@@ -92,7 +117,7 @@ class Application(QApplication):
         if not os.path.exists(vintelLogDirectory):
             os.mkdir(vintelLogDirectory)
 
-        splash = QtGui.QSplashScreen(QtGui.QPixmap(resourcePath("vi/ui/res/logo.png")))
+        splash = QtWidgets.QSplashScreen(QtGui.QPixmap(resourcePath("vi/ui/res/logo.png")))
 
         vintelCache = Cache()
         logLevel = vintelCache.getFromCache("logging_level")
@@ -128,7 +153,7 @@ class Application(QApplication):
 
         trayIcon = systemtray.TrayIcon(self)
         trayIcon.show()
-        self.mainWindow = viui.MainWindow(chatLogDirectory, trayIcon, backGroundColor)
+        self.mainWindow = viui.MainWindow(chatLogDirectory, gameLogDirectory, trayIcon, backGroundColor)
         self.mainWindow.show()
         self.mainWindow.raise_()
         splash.finish(self.mainWindow)

@@ -26,7 +26,7 @@ import time
 import six
 
 from collections import namedtuple
-from PyQt4.QtCore import QThread
+from PyQt5.QtCore import QThread
 from .resources import resourcePath
 from six.moves import queue
 
@@ -85,6 +85,8 @@ class SoundManager(six.with_metaclass(Singleton)):
     def playSound(self, name="alarm", message="", abbreviatedMessage=""):
         """ Schedules the work, which is picked up by SoundThread.run()
         """
+        if name is False:
+            name = "alarm"
         if self.soundAvailable and self.soundActive:
             if self.useSpokenNotifications:
                 audioFile = None

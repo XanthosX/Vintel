@@ -5,7 +5,7 @@ app_name = 'vintel'
 block_cipher = None
 
 a = Analysis(['vintel.py'],
-             pathex=['z:\\mark\\code\\vintel\\src' if sys.platform == 'win32' else '/Users/mark/code/vintel/src'],
+             pathex=['e:\\work\\Repositories\\vintel\\src' if sys.platform == 'win32' else '/Users/mark/code/vintel/src'],
              binaries=None,
              datas=None,
              hiddenimports=[],

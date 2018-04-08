@@ -26,7 +26,7 @@ if six.PY2:
 
 from bs4 import BeautifulSoup
 from vi import states
-from PyQt4.QtGui import QMessageBox
+from PyQt5.QtWidgets import QMessageBox
 
 
 from .parser_functions import parseStatus
@@ -96,6 +96,7 @@ class ChatParser(object):
 
     def _lineToMessage(self, line, roomname):
         # finding the timestamp
+        line = line.decode('utf-8')
         timeStart = line.find("[") + 1
         timeEnds = line.find("]")
         timeStr = line[timeStart:timeEnds].strip()
@@ -206,7 +207,7 @@ class ChatParser(object):
         if roomname.find('[') > -1:
             roomname = roomname[0:roomname.find('[')-1]
 			
-        print "Room name: %s" % roomname
+        print("Room name: %s" % roomname)
         if path not in self.fileData:
             # seems eve created a new file. New Files have 12 lines header
             self.fileData[path] = {"lines": 13}
@@ -214,7 +215,6 @@ class ChatParser(object):
         lines = self.addFile(path)
 		
         if path in self.ignoredPaths:
-            print "Path in ignored paths"
             return []
 
         for line in lines[oldLength - 1:]:

@@ -122,11 +122,11 @@ class Map(object):
                 sov = {}				
                 sovData = element.select("text")[1].text.strip().upper()
                 try:
-				    sov["name"] = sovData[0:(sovData.index('(')-1)]
-				    sov["sov_level"] = sovData[sovData.index('(')+1:len(sovData)-1]
+                    sov["name"] = sovData[0:(sovData.index('(')-1)]
+                    sov["sov_level"] = sovData[sovData.index('(')+1:len(sovData)-1]
                 except:
 				    # If system SOV is NPC index isn't set
-				    sov["name"] = sovData
+                    sov["name"] = sovData
 					
                 for keyname in ("x", "y", "width", "height"):
                     mapCoordinates[keyname] = float(uses[symbolId][keyname])
@@ -454,12 +454,12 @@ class System(object):
             self.setBackgroundColor(self.UNKNOWN_COLOR)
             # second line in the rects is reserved for the clock and SOV
             if self.sovShown is False:
-				self.SovShown = True
-				self.secondLine.string = self.sovData["name"]
-				try:
-				    self.secondLine.string += " (" + self.sovData["sov_level"] + ")"
-				except KeyError:
-				    pass # System is NPC owned
+                self.SovShown = True
+                self.secondLine.string = self.sovData["name"]
+                try:
+                    self.secondLine.string += " (" + self.sovData["sov_level"] + ")"
+                except KeyError:
+                    pass # System is NPC owned
 				
             self.secondLine["style"] = "fill: #000000;"
         if newStatus not in (states.NOT_CHANGE, states.REQUEST):  # unknown not affect system status
@@ -499,12 +499,12 @@ class System(object):
                     calcValue = 255
                     self.secondLine["style"] = "fill: #008100;"
                 if minutes > 30 and self.sovShown is False:
-					self.SovShown = True
-					self.secondLine.string = self.sovData["name"]
-					try:
-						self.secondLine.string += " (" + self.sovData["sov_level"] + ")"
-					except KeyError:
-						pass # System is NPC owned
+                    self.SovShown = True
+                    self.secondLine.string = self.sovData["name"]
+                    try:
+                        self.secondLine.string += " (" + self.sovData["sov_level"] + ")"
+                    except KeyError:
+                        pass # System is NPC owned
                 else:
                     self.sovShown = False					
                     string = "clr: {m:02d}:{s:02d}".format(m=minutes, s=seconds)
