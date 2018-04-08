@@ -95,4 +95,5 @@ class FileWatcher(QtCore.QThread):
             if self.maxAge and ((now - pathStat.st_mtime) > self.maxAge):
                 continue
             filesInDir[fullPath] = self.files.get(fullPath, 0)
+
         self.files = filesInDir

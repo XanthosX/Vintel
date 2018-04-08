@@ -241,7 +241,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def setupMap(self, initialize=False):
         self.mapTimer.stop()
         self.filewatcherThread.paused = True
-
+        self.fileWatcherForGameLogsThread.paused = True
         logging.info("Finding map file")
         regionName = self.cache.getFromCache("region_name")
         if not regionName:
@@ -309,6 +309,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.mapTimer.start(MAP_UPDATE_INTERVAL_MSECS)
         # Allow the file watcher to run now that all else is set up
         self.filewatcherThread.paused = False
+        self.fileWatcherForGameLogsThread.paused = False
         logging.critical("Map setup complete")
 
 
@@ -374,6 +375,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.avatarFindThread.wait()
             self.filewatcherThread.quit()
             self.filewatcherThread.wait()
+            self.fileWatcherForGameLogsThread.quit()
+            self.fileWatcherForGameLogsThread.wait()
             self.kosRequestThread.quit()
             self.kosRequestThread.wait()
             self.versionCheckThread.quit()
@@ -542,7 +545,6 @@ class MainWindow(QtWidgets.QMainWindow):
         systemName = six.text_type(url.path().split("/")[-1]).upper()
         try:
             system = self.systems[str(systemName)]
-            print("System name:{0}".format(systemName))
             sc = SystemChat(self, SystemChat.SYSTEM, system, self.chatEntries, self.knownPlayerNames)
             self.chat_message_added.connect(sc.addChatEntry)
             self.avatar_loaded.connect(sc.newAvatarAvailable)
@@ -802,7 +804,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
     def logFileChanged(self, path):
-        print("Log changed: %s" % path )
         messages = self.chatparser.fileModified(path)
         for message in messages:
             # If players location has changed
@@ -917,7 +918,6 @@ class SystemChat(QtWidgets.QDialog):
     signal_location_set = pyqtSignal(str,str)
 
     def __init__(self, parent, chatType, selector, chatEntries, knownPlayerNames):
-        print("Loading system chat UI")
         QtWidgets.QDialog.__init__(self, parent)
         uic.loadUi(resourcePath("vi/ui/SystemChat.ui"), self)
         self.parent = parent

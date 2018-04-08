@@ -58,39 +58,44 @@ class ChatParser(object):
         for filename in os.listdir(path):
             fullPath = os.path.join(path, filename)
             fileTime = os.path.getmtime(fullPath)
+            encoding = 'utf-16-le'
+            if len(filename)<20:
+                encoding = 'utf-8'
             if currentTime - fileTime < maxDiff:
-                self.addFile(fullPath)
+                self.addFile(fullPath,encoding)
 
-    def addFile(self, path):
+    def addFile(self, path, encod):
         lines = None
         content = ""
         filename = os.path.basename(path)
         roomname = filename[:-20]
         try:
-            with open(path, "r", encoding='utf-16-le') as f:
+            with open(path, "r", encoding=encod, errors='ignore') as f:
                 content = f.read()
         except Exception as e:
             self.ignoredPaths.append(path)
-            QMessageBox.warning(None, "Read a log file failed!", "File: {0} - problem: {1}".format(path, six.text_type(e)), "OK")
+            QMessageBox.warning(None, "Read a log file failed!", "File: {0} - problem: {1}".format(path, six.text_type(e)), QMessageBox.Ok)
             return None
-
+        charname = None
+        try:
+            charname = self.fileData[path]["charname"]
+        except:
+            pass
         lines = content.split("\n")
-        if path not in self.fileData or (roomname in LOCAL_NAMES and "charname" not in self.fileData.get(path, [])):
+        if path not in self.fileData or "charname" not in self.fileData.get(path, []):
             self.fileData[path] = {}
-            if roomname in LOCAL_NAMES:
-                charname = None
-                sessionStart = None
-                # for local-chats we need more infos
-                for line in lines:
-                    if "Listener:" in line:
-                        charname = line[line.find(":") + 1:].strip()
-                    elif "Session started:" in line:
-                        sessionStr = line[line.find(":") + 1:].strip()
-                        sessionStart = datetime.datetime.strptime(sessionStr, "%Y.%m.%d %H:%M:%S")
-                    if charname and sessionStart:
-                        self.fileData[path]["charname"] = charname
-                        self.fileData[path]["sessionstart"] = sessionStart
-                        break
+            sessionStart = None
+            # for local-chats we need more infos
+            for line in lines:
+                if "listener:" in line.lower():
+                    charname = line[line.find(":") + 1:].strip()
+                elif "session started:" in line.lower():
+                    sessionStr = line[line.find(":") + 1:].strip()
+                    sessionStart = datetime.datetime.strptime(sessionStr, "%Y.%m.%d %H:%M:%S")
+                if charname and sessionStart:
+                    self.fileData[path]["charname"] = charname
+                    self.fileData[path]["sessionstart"] = sessionStart
+                    break
         self.fileData[path]["lines"] = len(lines)
         return lines
 
@@ -102,7 +107,8 @@ class ChatParser(object):
         timeStr = line[timeStart:timeEnds].strip()
         try:
             timestamp = datetime.datetime.strptime(timeStr, "%Y.%m.%d %H:%M:%S")
-        except ValueError:
+        except ValueError as e:
+            print(e)
             return None
         # finding the username of the poster
         userEnds = line.find(">")
@@ -169,13 +175,18 @@ class ChatParser(object):
             self.locations[charname] = {"system": "?", "timestamp": datetime.datetime(1970, 1, 1, 0, 0, 0, 0)}
 
         # Finding the timestamp
-        timeStart = line.find("[") + 1
-        timeEnds = line.find("]")
+        timeStart = line.decode().find("[") + 1
+        timeEnds = line.decode().find("]")
         timeStr = line[timeStart:timeEnds].strip()
-        timestamp = datetime.datetime.strptime(timeStr, "%Y.%m.%d %H:%M:%S")
-
+        timestamp = None
+        try:
+            timestamp = datetime.datetime.strptime(timeStr.decode(), "%Y.%m.%d %H:%M:%S")
+        except: 
+            pass 
         # Finding the username of the poster
-        userEnds = line.find(">")
+        userEnds = line.decode().find(">")
+        if userEnds == -1:
+            userEnds = len(line)-1
         username = line[timeEnds + 1:userEnds].strip()
 
         # Finding the pure message
@@ -192,6 +203,18 @@ class ChatParser(object):
                 self.locations[charname]["system"] = system
                 self.locations[charname]["timestamp"] = timestamp
                 message = Message("", "", timestamp, charname, [system, ], "", "", status)
+
+        # Solving new game logs user location
+        if message == []:
+            text = line[timeEnds:].decode().strip().replace("*", "").lower()
+            if "(none)" in text and "jumping" in text and "to" in text:
+                system = text.split("to")[1].strip().upper()
+                status = states.LOCATION 
+                if self.locations[charname]["timestamp"] is None or timestamp > self.locations[charname]["timestamp"]:
+                    self.locations[charname]["system"] = system
+                    self.locations[charname]["timestamp"] = timestamp
+                    message = Message("", "", timestamp, charname, [system, ], "", "", status)
+				
         return message
 
     def fileModified(self, path):
@@ -201,33 +224,49 @@ class ChatParser(object):
         # Checking if we must do anything with the changed file.
         # We only need those which name is in the rooms-list
         # EvE names the file like room_20140913_200737.txt, so we don't need
-        # the last 20 chars
+        # the last 20 chars. if file name is under 20 char it's most likely a game log 
         filename = os.path.basename(path)
-        roomname = str(filename[:-20])
-        if roomname.find('[') > -1:
-            roomname = roomname[0:roomname.find('[')-1]
+  
+        if len(filename) > 20:
+            roomname = str(filename[:-20])
+            if roomname.find('[') > -1:
+                roomname = roomname[0:roomname.find('[')-1]
 			
-        print("Room name: %s" % roomname)
-        if path not in self.fileData:
-            # seems eve created a new file. New Files have 12 lines header
-            self.fileData[path] = {"lines": 13}
-        oldLength = self.fileData[path]["lines"]
-        lines = self.addFile(path)
+            if path not in self.fileData:
+                # seems eve created a new file. New Files have 12 lines header
+                self.fileData[path] = {"lines": 13}
+            oldLength = self.fileData[path]["lines"]
+            lines = self.addFile(path,'utf-16-le')
 		
-        if path in self.ignoredPaths:
-            return []
+            if path in self.ignoredPaths:
+                return []
 
-        for line in lines[oldLength - 1:]:
-            line = line.strip()
-            line = line.encode('ascii', 'ignore')
-            if len(line) > 2:
-                message = None
-                if roomname in LOCAL_NAMES:
-                    message = self._parseLocal(path, line)
-                else:
+            for line in lines[oldLength - 1:]:
+                line = line.strip()
+                line = line.encode('utf-8', 'ignore')
+                if len(line) > 2:
+                    message = None
                     message = self._lineToMessage(line, roomname)
-                if message:
-                    messages.append(message)
+                    if message:
+                        messages.append(message)
+        else:
+            # Game log parsing 
+            if path not in self.fileData:
+                self.fileData[path] = { "lines": 6} # Game logs have 6 lines header so we'll skip that 
+            oldLength = self.fileData[path]["lines"]
+            lines = self.addFile(path,'utf-8') 
+     
+            if path in self.ignoredPaths:
+                return []
+            for line in lines[oldLength - 1:]:
+                line = line.strip()
+                line = line.encode('ascii','ignore') 
+                if len(line) > 2:
+                    message = None 
+
+                    message = self._parseLocal(path, line)
+                    if message:
+                        messages.append(message)
         return messages
 
 

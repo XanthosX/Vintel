@@ -6,7 +6,7 @@ block_cipher = None
 
 a = Analysis(['vintel.py'],
              pathex=['e:\\work\\Repositories\\vintel\\src' if sys.platform == 'win32' else '/Users/mark/code/vintel/src'],
-             binaries=None,
+             binaries=[('E:\\Program Files (x86)\\Windows Kits\\10\\Redist\\ucrt\\DLLs\\x86\\','.')],
              datas=None,
              hiddenimports=[],
              hookspath=[],

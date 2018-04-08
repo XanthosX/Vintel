@@ -84,7 +84,6 @@ class Application(QApplication):
             QMessageBox.critical(None, "No path to Logs", "No logs found at: " + chatLogDirectory, "Quit")
             sys.exit(1)
 		
-        print("Logs dir: %s" % chatLogDirectory)
 
         if not os.path.exists(gameLogDirectory):
             if sys.platform.startswith("darwin"):
@@ -105,7 +104,6 @@ class Application(QApplication):
             QMessageBox.critical(None, "No path to Logs", "No logs found at: " + gameLogDirectory, "Quit")
             sys.exit(1)
 		
-        print("Game logs dir: %s" % gameLogDirectory)
 
         # Setting local directory for cache and logging
         vintelDirectory = os.path.join(os.path.dirname(os.path.dirname(chatLogDirectory)), "vintel")
@@ -153,6 +151,7 @@ class Application(QApplication):
 
         trayIcon = systemtray.TrayIcon(self)
         trayIcon.show()
+
         self.mainWindow = viui.MainWindow(chatLogDirectory, gameLogDirectory, trayIcon, backGroundColor)
         self.mainWindow.show()
         self.mainWindow.raise_()
