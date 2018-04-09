@@ -3,5 +3,5 @@
 .vs/*
 *.pyproj
 *.exe
-dist/*
-build/*
+src/dist/*
+src/build/*

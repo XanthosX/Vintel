@@ -4,7 +4,7 @@ import six
 from PyQt5 import QtWidgets, QtGui, uic
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QImage,QPixmap
-from vi.resources import resourcePath
+from pkg_resources import resource_stream, resource_filename
 
 class ChatEntryWidget(QtWidgets.QWidget):
     mark_system = pyqtSignal(str)
@@ -15,8 +15,8 @@ class ChatEntryWidget(QtWidgets.QWidget):
     def __init__(self, message):
         QtWidgets.QWidget.__init__(self)
         if not self.questionMarkPixmap:
-            self.questionMarkPixmap = QtGui.QPixmap(resourcePath("vi/ui/res/qmark.png")).scaledToHeight(32)
-        uic.loadUi(resourcePath("vi/ui/ChatEntry.ui"), self)
+            self.questionMarkPixmap = QtGui.QPixmap(resource_filename(__name__,"res/qmark.png")).scaledToHeight(32)
+        uic.loadUi(resource_stream(__name__,"ChatEntry.ui"), self)
         self.avatarLabel.setPixmap(self.questionMarkPixmap)
         self.message = message
         self.updateText()

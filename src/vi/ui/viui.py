@@ -96,7 +96,7 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             self.knownPlayerNames = set()
             diagText = "Vintel scans EVE system logs and remembers your characters as they change systems.\n\nSome features (clipboard KOS checking, alarms, etc.) may not work until your character(s) have been registered. Change systems, with each character you want to monitor, while Vintel is running to remedy this."
-            QMessageBox.warning(None, "Known Characters not Found", diagText, "Ok")
+            QMessageBox.warning(None, "Known Characters not Found", diagText, QMessageBox.Ok)
 
         # Set up user's intel rooms
         roomnames = self.cache.getFromCache("room_names")
@@ -258,7 +258,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.dotlan = dotlan.Map(regionName, svg)
         except dotlan.DotlanException as e:
             logging.error(e)
-            QMessageBox.critical(None, "Error getting map", six.text_type(e), "Quit")
+            QMessageBox.critical(None, "Error getting map", six.text_type(e), QMessageBox.Ok)
             sys.exit(1)
 
         if self.dotlan.outdatedCacheError:
@@ -266,7 +266,7 @@ class MainWindow(QtWidgets.QMainWindow):
             diagText = "Something went wrong getting map data. Proceeding with older cached data. " \
                        "Check for a newer version and inform the maintainer.\n\nError: {0} {1}".format(type(e), six.text_type(e))
             logging.warn(diagText)
-            QMessageBox.warning(None, "Using map from cache", diagText, "Ok")
+            QMessageBox.warning(None, "Using map from cache", diagText, QMessageBox.Ok)
 
 
         # Load the jumpbridges
@@ -645,7 +645,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.dotlan.setJumpbridges(data)
             self.cache.putIntoCache("jumpbridge_url", url, 60 * 60 * 24 * 365 * 8)
         except Exception as e:
-            QMessageBox.warning(None, "Loading jumpbridges failed!", "Error: {0}".format(six.text_type(e)), "OK")
+            QMessageBox.warning(None, "Loading jumpbridges failed!", "Error: {0}".format(six.text_type(e)), QMessageBox.Ok)
 
 
     def handleRegionMenuItemSelected(self, menuAction=None):
@@ -1013,4 +1013,4 @@ class JumpbridgeChooser(QtWidgets.QDialog):
             self.setJumpbridgeURL.emit(url)
             self.accept()
         except Exception as e:
-            QMessageBox.critical(None, "Finding Jumpbridgedata failed", "Error: {0}".format(six.text_type(e)), "OK")
+            QMessageBox.critical(None, "Finding Jumpbridgedata failed", "Error: {0}".format(six.text_type(e)),QMessageBox.Ok)
