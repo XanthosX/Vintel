@@ -946,7 +946,7 @@ class SystemChat(QtWidgets.QDialog):
             scrollToBottom = True
         entry = ChatEntryWidget(message)
         entry.avatarLabel.setPixmap(avatarPixmap)
-        listWidgetItem = QtGui.QListWidgetItem(self.chat)
+        listWidgetItem = QtWidgets.QListWidgetItem(self.chat)
         listWidgetItem.setSizeHint(entry.sizeHint())
         self.chat.addItem(listWidgetItem)
         self.chat.setItemWidget(listWidgetItem, entry)
