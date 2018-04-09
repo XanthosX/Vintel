@@ -84,7 +84,7 @@ class Application(QApplication):
                 chatLogDirectory = os.path.join(documentsPath, "EVE", "logs", "Chatlogs")
         if not os.path.exists(chatLogDirectory):
             # None of the paths for logs exist, bailing out
-            QMessageBox.critical(None, "No path to Logs", "No logs found at: " + chatLogDirectory, "Quit")
+            QMessageBox.critical(None, "No path to Logs", "No logs found at: " + chatLogDirectory, QMessageBox.Ok)
             sys.exit(1)
 		
 
@@ -104,7 +104,7 @@ class Application(QApplication):
                 gameLogDirectory = os.path.join(documentsPath, "EVE", "logs", "Gamelogs")
         if not os.path.exists(gameLogDirectory):
             # None of the paths for logs exist, bailing out
-            QMessageBox.critical(None, "No path to Logs", "No logs found at: " + gameLogDirectory, "Quit")
+            QMessageBox.critical(None, "No path to Logs", "No logs found at: " + gameLogDirectory, QMessageBox.Ok)
             sys.exit(1)
 		
 
