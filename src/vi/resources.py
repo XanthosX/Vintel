@@ -19,6 +19,7 @@
 
 import os
 import sys
+import tempfile 
 
 
 def resourcePath(relativePath):
@@ -26,7 +27,7 @@ def resourcePath(relativePath):
     """
     if getattr(sys, 'frozen', False):
         # PyInstaller creates a temp folder and stores path in _MEIPASS
-        basePath = sys._MEIPASS
+        basePath = os.path.dirname(sys.executable)
     else:
         basePath = os.path.abspath(".")
     returnpath = os.path.join(basePath, relativePath)

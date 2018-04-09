@@ -24,9 +24,11 @@ import six
 import requests
 import webbrowser
 
+
+import vi.PanningWebView
 import vi.version
 from vi.ui.ChatEntryWidget import ChatEntryWidget
-
+from pkg_resources import resource_string, resource_stream, resource_filename
 import logging
 from PyQt5.QtGui import *
 from PyQt5 import QtGui, uic, QtCore, QtWidgets
@@ -38,7 +40,6 @@ from vi import amazon_s3, evegate
 from vi import dotlan, filewatcher
 from vi import states
 from vi.cache.cache import Cache
-from vi.resources import resourcePath
 from vi.soundmanager import SoundManager
 from vi.threads import AvatarFindThread, KOSCheckerThread, MapStatisticsThread
 from vi.ui.systemtray import TrayContextMenu
@@ -63,10 +64,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if backGroundColor:
             self.setStyleSheet("QWidget { background-color: %s; }" % backGroundColor)
-        uic.loadUi(resourcePath('vi/ui/MainWindow.ui'), self)
+        uic.loadUi(resource_stream(__name__, 'MainWindow.ui'), self)
         self.setWindowTitle("Vintel " + vi.version.VERSION + "{dev}".format(dev="-SNAPSHOT" if vi.version.SNAPSHOT else ""))
-        self.taskbarIconQuiescent = QtGui.QIcon(resourcePath("vi/ui/res/logo_small.png"))
-        self.taskbarIconWorking = QtGui.QIcon(resourcePath("vi/ui/res/logo_small_green.png"))
+        self.taskbarIconQuiescent = QtGui.QIcon(resource_filename(__name__,'res/logo_small.png'))
+        self.taskbarIconWorking = QtGui.QIcon(resource_filename(__name__,'res/logo_small_green.png'))
         self.setWindowIcon(self.taskbarIconQuiescent)
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
 
@@ -248,7 +249,7 @@ class MainWindow(QtWidgets.QMainWindow):
             regionName = "Providence"
         svg = None
         try:
-            with open(resourcePath("vi/ui/res/mapdata/{0}.svg".format(regionName))) as svgFile:
+            with open(resource_filename(__name__,"res/mapdata/{0}.svg".format(regionName))) as svgFile:
                 svg = svgFile.read()
         except Exception as e:
             print(e)
@@ -742,16 +743,16 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def showInfo(self):
         infoDialog = QtWidgets.QDialog(self)
-        uic.loadUi(resourcePath("vi/ui/Info.ui"), infoDialog)
+        uic.loadUi(resource_stream(__name__,"Info.ui"), infoDialog)
         infoDialog.versionLabel.setText(u"Version: {0}".format(vi.version.VERSION))
-        infoDialog.logoLabel.setPixmap(QtGui.QPixmap(resourcePath("vi/ui/res/logo.png")))
+        infoDialog.logoLabel.setPixmap(QtGui.QPixmap(resource_filename(__name__,"res/logo.png")))
         infoDialog.closeButton.clicked.connect(infoDialog.accept)
         infoDialog.show()
 
 
     def showSoundSetup(self):
         dialog = QtWidgets.QDialog(self)
-        uic.loadUi(resourcePath("vi/ui/SoundSetup.ui"), dialog)
+        uic.loadUi(resource_stream(__name__,"SoundSetup.ui"), dialog)
         dialog.volumeSlider.setValue(SoundManager().soundVolume)
         dialog.volumeSlider.valueChanged.connect(SoundManager().setSoundVolume)
         dialog.testSoundButton.clicked.connect(SoundManager().playSound)
@@ -844,7 +845,7 @@ class ChatroomsChooser(QtWidgets.QDialog):
 	
     def __init__(self, parent):
         QtWidgets.QDialog.__init__(self, parent)
-        uic.loadUi(resourcePath("vi/ui/ChatroomsChooser.ui"), self)
+        uic.loadUi(resource_stream(__name__,"ChatroomsChooser.ui"), self)
         self.defaultButton.clicked.connect(self.setDefaults)
         self.cancelButton.clicked.connect( self.accept)
         self.saveButton.clicked.connect(self.saveClicked)
@@ -872,7 +873,7 @@ class RegionChooser(QtWidgets.QDialog):
 
     def __init__(self, parent):
         QtWidgets.QDialog.__init__(self, parent)
-        uic.loadUi(resourcePath("vi/ui/RegionChooser.ui"), self)
+        uic.loadUi(resource_stream(__name__,"RegionChooser.ui"), self)
         self.cancelButton.clicked.connect(self.accept)
         self.saveButton.clicked.connect(self.saveClicked)
         cache = Cache()
@@ -894,7 +895,7 @@ class RegionChooser(QtWidgets.QDialog):
                 correct = False
                 # Fallback -> ships vintel with this map?
                 try:
-                    with open(resourcePath("vi/ui/res/mapdata/{0}.svg".format(text))) as _:
+                    with open(resource_filename(__name__,"res/mapdata/{0}.svg".format(text))) as _:
                         correct = True
                 except Exception as e:
                     logging.error(e)
@@ -919,7 +920,7 @@ class SystemChat(QtWidgets.QDialog):
 
     def __init__(self, parent, chatType, selector, chatEntries, knownPlayerNames):
         QtWidgets.QDialog.__init__(self, parent)
-        uic.loadUi(resourcePath("vi/ui/SystemChat.ui"), self)
+        uic.loadUi(resource_stream(__name__,"SystemChat.ui"), self)
         self.parent = parent
         self.chatType = 0
         self.selector = selector
@@ -995,12 +996,12 @@ class JumpbridgeChooser(QtWidgets.QDialog):
 
     def __init__(self, parent, url):
         QtWidgets.QDialog.__init__(self, parent)
-        uic.loadUi(resourcePath("vi/ui/JumpbridgeChooser.ui"), self)
+        uic.loadUi(resource_stream(__name__,"JumpbridgeChooser.ui"), self)
         self.saveButton.clicked.connect(self.savePath)
         self.cancelButton.clicked.connect( self.accept)
         self.urlField.setText(url)
         # loading format explanation from textfile
-        with open(resourcePath("docs/jumpbridgeformat.txt")) as f:
+        with open(resource_filename(__name__,"jumpbridgeformat.txt")) as f:
             self.formatInfoField.setPlainText(f.read())
 
 

@@ -27,7 +27,7 @@ import six
 
 from collections import namedtuple
 from PyQt5.QtCore import QThread
-from .resources import resourcePath
+from pkg_resources import resource_filename 
 from six.moves import queue
 
 import logging
@@ -91,7 +91,7 @@ class SoundManager(six.with_metaclass(Singleton)):
             if self.useSpokenNotifications:
                 audioFile = None
             else:
-                audioFile = resourcePath("vi/ui/res/{0}".format(self.SOUNDS[name]))
+                audioFile = resource_filename(__name__,"ui/res/{0}".format(self.SOUNDS[name]))
             self._soundThread.queue.put((audioFile, message, abbreviatedMessage))
 
     def quit(self):

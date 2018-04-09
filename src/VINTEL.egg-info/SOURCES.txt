@@ -1,0 +1,10 @@
+MANIFEST.in
+setup.py
+VINTEL.egg-info/PKG-INFO
+VINTEL.egg-info/SOURCES.txt
+VINTEL.egg-info/dependency_links.txt
+VINTEL.egg-info/top_level.txt
+vi/ui/ChatEntryWidget.py
+vi/ui/__init__.py
+vi/ui/systemtray.py
+vi/ui/viui.py
