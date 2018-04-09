@@ -60,6 +60,9 @@ class Application(QApplication):
         chatLogDirectory = ""
         gameLogDirectory = ""
 
+        if sys.platform != "win32" and len(sys.argv) <=2: 
+            print("Usage: python vintel.py <chatlogsdir> <gamelogsdir>")
+            sys.exit(1)
         if len(sys.argv) > 1:
             chatLogDirectory = sys.argv[1]
         if len(sys.argv) > 2:
