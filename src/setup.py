@@ -15,7 +15,7 @@ os.environ['TK_LIBRARY'] = os.path.join(PYTHON_INSTALL_DIR, 'tcl', 'tk8.6')
 
 executables = [Executable("vintel.py", base=base,icon="icon.ico")]
 
-packages = ["idna","appdirs","packaging.version","packaging.specifiers","packaging","pyglet"]
+packages = ["idna","appdirs","packaging.version","packaging.specifiers","packaging","pyglet","pyqt5"]
 
 package_data = {'ui' : ['vi/ui/*']} 
 

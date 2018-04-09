@@ -27,9 +27,9 @@ from PyQt5.QtCore import QThread, pyqtSignal, QTimer
 from vi import evegate
 from vi import koschecker
 from vi.cache.cache import Cache
-from vi.resources import resourcePath
-from vi.ui import ChatEntryWidget
 
+from vi.ui import ChatEntryWidget
+from pkg_resources import resource_filename
 
 STATISTICS_UPDATE_INTERVAL_MSECS = 1 * 60 * 1000
 
@@ -68,7 +68,7 @@ class AvatarFindThread(QThread):
                 logging.debug("AvatarFindThread getting avatar for %s" % charname)
                 avatar = None
                 if charname == "VINTEL":
-                    with open(resourcePath("vi/ui/res/logo_small.png"), "rb") as f:
+                    with open(resource_filename(__name__,"ui/res/logo_small.png"), "rb") as f:
                         avatar = f.read()
                 if not avatar:
                     avatar = cache.getAvatar(charname)

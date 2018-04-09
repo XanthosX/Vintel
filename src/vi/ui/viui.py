@@ -30,12 +30,12 @@ import vi.version
 from vi.ui.ChatEntryWidget import ChatEntryWidget
 from pkg_resources import resource_string, resource_stream, resource_filename
 import logging
-from PyQt5.QtGui import *
 from PyQt5 import QtGui, uic, QtCore, QtWidgets
 from PyQt5.QtCore import QPoint, pyqtSignal
-from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtWidgets import QMessageBox, QAction, QActionGroup, QStyleOption, QStyle
 from PyQt5.QtWebEngineWidgets import QWebEnginePage
+from PyQt5.QtGui import *
+
 from vi import amazon_s3, evegate
 from vi import dotlan, filewatcher
 from vi import states
@@ -88,6 +88,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.scanIntelForKosRequestsEnabled = True
         self.initialMapPosition = None
         self.mapPositionsDict = {}
+        self.deferedScrollPosition = None
 
         # Load user's toon names
         self.knownPlayerNames = self.cache.getFromCache("known_player_names")

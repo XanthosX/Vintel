@@ -23,8 +23,8 @@ from six.moves import range
 from PyQt5 import QtGui, QtCore, Qt, QtWidgets
 from PyQt5.QtWidgets import QAction, QActionGroup, QSystemTrayIcon
 from PyQt5.QtGui import QIcon
+from pkg_resources import resource_filename
 
-from vi.resources import resourcePath
 from vi import states
 from vi.soundmanager import SoundManager
 from PyQt5.QtCore import pyqtSignal
@@ -84,7 +84,7 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
     MIN_WAIT_NOTIFICATION = 15
 
     def __init__(self, app):
-        self.icon = QIcon(resourcePath("vi/ui/res/logo_small.png"))
+        self.icon = QIcon(resource_filename(__name__,"res/logo_small.png"))
         QSystemTrayIcon.__init__(self, self.icon, app)
         self.setToolTip("Your Vintel-Information-Service! :)")
         self.lastNotifications = {}

@@ -21,6 +21,8 @@ import sqlite3
 import threading
 import time
 import six
+import PyQt5 
+
 if six.PY2:
     def to_blob(x):
         return buffer(str(x))
