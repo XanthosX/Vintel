@@ -6,16 +6,16 @@
 
 Visual intel chat analysis, planning and notification application for [EVE Online](http://www.eveonline.com). Gathers status through in-game intelligence channels on all known hostiles and presents all the data on a [dotlan](http://evemaps.dotlan.net/map/Cache#npc24) generated regional map. The map is annotated in real-time as players report intel in monitored chat channels.
 
-Vintel is written with Python 2.7, using PyQt4 for the application presentation layer, BeautifulSoup4 for SVG parsing, and Pyglet for audio playback.
+Vintel is written with Python 3.6, using PyQt5 for the application presentation layer, BeautifulSoup4 for SVG parsing, and Pyglet for audio playback.
 
 ### News
-_The current release version of Vintel [can be found here](https://github.com/Xanthos-Eve/vintel/releases). Both Mac and Windows distributions are now available for download with this release._
+_The current release version of Vintel [can be found here](https://github.com/bperian/vintel/releases).  Windows distributions are now available for download with this release._
 
-Keep up on the latest at the [wiki](https://github.com/Xanthos-Eve/vintel/wiki) or visit our [issues](https://github.com/Xanthos-Eve/vintel/issues) page to see what bugs and features are in the queue.
+Keep up on the latest at the [wiki](https://github.com/bperian/vintel/wiki) or visit our [issues](https://github.com/bperian/vintel/issues) page to see what bugs and features are in the queue.
 
 ## Screenshot
 
-![](https://github.com/Xanthos-Eve/vintel/blob/master/src/docs/screenshot.png)
+![](https://github.com/bperian/vintel/blob/master/src/docs/screenshot.png)
 
 ## Features
 
@@ -58,16 +58,13 @@ To use this feature: click on a pilot in the local pilot list and then type the 
 To run or build from the source you need the following packages installed on your machine. Most, if not all, can be installed from the command line using package management software such as "pip". Mac and Linux both come with pip installed, Windows users may need to install [cygwin](https://www.cygwin.com) to get pip. Of course all the requirements also have downoad links.
 
 The packages required are:
-- Python 2.7.x
+- Python 3.6.x
 https://www.python.org/downloads/
-Vintel is not compatible with Python 3!
-- PyQt4x
+- PyQt5x
 http://www.riverbankcomputing.com/software/pyqt/download
-Please use the PyQt Binary Package for Py2.7
-Vintel is not compatible with PyQt5!
 - BeautifulSoup 4
 https://pypi.python.org/pypi/beautifulsoup4
-- Pyglet 1.2.4 (for python 2.7)
+- Pyglet 
 https://bitbucket.org/pyglet/pyglet/wiki/Download
 pyglet is used to play the sound – If it is not available the sound option will be disabled.
 - Requests 2
@@ -76,8 +73,8 @@ https://pypi.python.org/pypi/requests
 
 ## Building the Vintel Standalone Package
 
- - The standalone is created using pyinstaller. All media files and the .spec-file with the configuration for pyinstaller are included in the source repo. Pyinstaller can be found here: https://github.com/pyinstaller/pyinstaller/wiki.
- - Edit the .spec file to match your src path in the "a = Analysis" section and execute "pyinstaller vintel.spec vintel.py". If everything went correctly you should get a dist folder that contains the standalone executable.
+ - The standalone is created using pyinstaller. All media files and the .spec-file with the configuration for pyinstaller are included in the source repo. cx_freeze can be found here: https://pypi.python.org/pypi/cx_Freeze. 
+ - xecute "python setup.py build". If everything went correctly you should get a dist folder that contains the standalone executable + required files.
 
 ## FAQ
 
@@ -146,8 +143,8 @@ Vintel writes its own set of logs to the \Documents\EVE\vintel\vintel directory.
 
 **I love Vintel - how can I help?**
 
-If you are technically inclined and have a solid grasp of Python, [contact the project maintainer via email](mailto:xanthos.eve@gmail.com) to see how you can best help out. Alternatively you can find something you want to change and create a pull request to have your changes reviewed and potentially added to the codebase. There have been several great contributions made this way!
+If you are technically inclined and have a solid grasp of Python, [contact the project maintainer via email](mailto:bperian@faxtorial.com) to see how you can best help out. Alternatively you can find something you want to change and create a pull request to have your changes reviewed and potentially added to the codebase. There have been several great contributions made this way!
 
 **I'm not a coder, how can I help?**
 
-Your feedback is needed! Use the program for a while, then come back [here and create issues](https://github.com/Xanthos-Eve/vintel/issues). Record anything you think about Vintel - bugs, frustrations, and ideas to make it better.
+Your feedback is needed! Use the program for a while, then come back [here and create issues](https://github.com/bperian/vintel/issues). Record anything you think about Vintel - bugs, frustrations, and ideas to make it better.
