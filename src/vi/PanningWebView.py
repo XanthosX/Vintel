@@ -9,7 +9,6 @@ from PyQt5.QtCore import QEvent
 class WebEnginePage(QWebEnginePage):
     mapLinkClicked = pyqtSignal(QUrl) 
     def acceptNavigationRequest(self, url, type, isMainFrame):
-        print("Link clicked")
         if type == QWebEnginePage.NavigationTypeLinkClicked:
             self.mapLinkClicked.emit(url)
             return False
@@ -20,11 +19,6 @@ class PanningWebView(QWebEngineView):
     def setPage(self, newPage):
         super(PanningWebView, self).setPage(newPage)
         self.widget = self.page()
-
-
-		
-    def on_url_change(self):
-        self.page().runJavaScript("return false")
 
     def __init__(self, parent=None):
         super(PanningWebView, self).__init__()

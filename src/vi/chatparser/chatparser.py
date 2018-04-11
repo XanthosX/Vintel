@@ -21,6 +21,8 @@ import datetime
 import os
 import time
 import six
+import logging 
+
 if six.PY2:
     from io import open
 
@@ -40,7 +42,7 @@ class ChatParser(object):
     """ ChatParser will analyze every new line that was found inside the Chatlogs.
     """
 
-    def __init__(self, path, rooms, systems):
+    def __init__(self, path, rooms, systems, logging):
         """ path = the path with the logs
             rooms = the rooms to parse"""
         self.path = path  # the path with the chatlog
@@ -50,6 +52,7 @@ class ChatParser(object):
         self.knownMessages = []  # message we allready analyzed
         self.locations = {}  # informations about the location of a char
         self.ignoredPaths = []
+        self.logging = logging
         self._collectInitFileData(path)
 
     def _collectInitFileData(self, path):
@@ -108,7 +111,7 @@ class ChatParser(object):
         try:
             timestamp = datetime.datetime.strptime(timeStr, "%Y.%m.%d %H:%M:%S")
         except ValueError as e:
-            print(e)
+            logging.critical(e)
             return None
         # finding the username of the poster
         userEnds = line.find(">")

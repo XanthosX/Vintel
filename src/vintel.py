@@ -24,7 +24,7 @@ import logging
 import traceback
 
 from logging.handlers import RotatingFileHandler
-from logging import StreamHandler
+from logging import FileHandler
 
 from vi import version
 from vi.ui import viui, systemtray
@@ -141,7 +141,7 @@ class Application(QApplication):
         fileHandler.setFormatter(formatter)
         rootLogger.addHandler(fileHandler)
 
-        consoleHandler = StreamHandler()
+        consoleHandler = FileHandler("vintel.log")
         consoleHandler.setFormatter(formatter)
         rootLogger.addHandler(consoleHandler)
 
@@ -155,7 +155,7 @@ class Application(QApplication):
         trayIcon = systemtray.TrayIcon(self)
         trayIcon.show()
 
-        self.mainWindow = viui.MainWindow(chatLogDirectory, gameLogDirectory, trayIcon, backGroundColor)
+        self.mainWindow = viui.MainWindow(chatLogDirectory, gameLogDirectory, trayIcon, backGroundColor, logging)
         self.mainWindow.show()
         self.mainWindow.raise_()
         splash.finish(self.mainWindow)

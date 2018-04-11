@@ -24,6 +24,7 @@ import re
 import requests
 import time
 import six
+import logging 
 
 from collections import namedtuple
 from PyQt5.QtCore import QThread

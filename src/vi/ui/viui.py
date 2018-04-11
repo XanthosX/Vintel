@@ -57,7 +57,7 @@ class MainWindow(QtWidgets.QMainWindow):
     chat_message_added = pyqtSignal(object)
     avatar_loaded = pyqtSignal(str,bytes)
 
-    def __init__(self, pathToLogs, pathToGameLogs, trayIcon, backGroundColor):
+    def __init__(self, pathToLogs, pathToGameLogs, trayIcon, backGroundColor, logging):
 
         QtWidgets.QMainWindow.__init__(self)
         self.cache = Cache()
@@ -89,7 +89,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.initialMapPosition = None
         self.mapPositionsDict = {}
         self.deferedScrollPosition = None
-
+        self.logging = logging
         # Load user's toon names
         self.knownPlayerNames = self.cache.getFromCache("known_player_names")
         if self.knownPlayerNames:
@@ -198,10 +198,11 @@ class MainWindow(QtWidgets.QMainWindow):
         pass
 
     def handleLoadFinished(self):
-        self.loaded = True 
+        self.loaded = True
         if self.deferedScrollPosition:
             self.mapView.page().runJavaScript('window.scrollTo({}, {});'.format(self.deferedScrollPosition.x(), self.deferedScrollPosition.y()))
             self.deferedScrollPosition = None
+
     def setMapScrollPosition(self, position):
         if self.loaded:
             self.mapView.page().runJavaScript('window.scrollTo({}, {});'.format(position.x(), position.y()))
@@ -253,7 +254,7 @@ class MainWindow(QtWidgets.QMainWindow):
             with open(resource_filename(__name__,"res/mapdata/{0}.svg".format(regionName))) as svgFile:
                 svg = svgFile.read()
         except Exception as e:
-            print(e)
+            logging.critical(e)
 
         try:
             self.dotlan = dotlan.Map(regionName, svg)
@@ -275,7 +276,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setJumpbridges(self.cache.getFromCache("jumpbridge_url"))
         self.systems = self.dotlan.systems
         logging.critical("Creating chat parser")
-        self.chatparser = ChatParser(self.pathToLogs, self.roomnames, self.systems)
+        self.chatparser = ChatParser(self.pathToLogs, self.roomnames, self.systems, self.logging)
       
         # Menus - only once
         if initialize:
@@ -554,7 +555,7 @@ class MainWindow(QtWidgets.QMainWindow):
             sc.show()
         except Exception as e:
             # We didn't click a system url 
-            print("mapLinkClicked->Error::{0}".format(e))
+            logging.critical("mapLinkClicked->Error::{0}".format(e))
             pass
 
     def markSystemOnMap(self, systemname):
@@ -791,7 +792,7 @@ class MainWindow(QtWidgets.QMainWindow):
             logging.error("updateStatisticsOnMap, error: %s" % text)
 
 
-    def updateMapView(self):
+    def updateMapView(self): 
         logging.debug("Updating map start")
         self.setMapContent(self.dotlan.svg)
         logging.debug("Updating map complete")
