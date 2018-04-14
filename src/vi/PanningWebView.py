@@ -13,6 +13,9 @@ class WebEnginePage(QWebEnginePage):
             self.mapLinkClicked.emit(url)
             return False
         return True
+    def javaScriptConsoleMessage(self, msg, line, source):
+        # supress Javascript warnings and uncaught ReferenceError exceptions for JS functions
+        pass
 		
 class PanningWebView(QWebEngineView):
   

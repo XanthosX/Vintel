@@ -88,7 +88,7 @@ class Map(object):
                         "temporary problem (like dotlan is not reachable), or " \
                         "everythig went to hell. Sorry. This makes no sense " \
                         "without the map.\n\nRemember the site for possible " \
-                        "updates: https://github.com/Xanthos-Eve/vintel".format(type(e), six.text_type(e))
+                        "updates: https://github.com/bperian/vintel".format(type(e), six.text_type(e))
                     raise DotlanException(t)
         # Create soup from the svg
         self.soup = BeautifulSoup(svg, 'html.parser')
@@ -277,18 +277,7 @@ class Map(object):
         for line in self.soup.select(".jumpbridge"):
             line["visibility"] = value
         self._jumpMapsVisible = newStatus
-        # self.debugWriteSoup()
         return newStatus
-
-    def debugWriteSoup(self):
-        svgData = self.soup.prettify("utf-8")
-        try:
-            with open("/Users/mark/Desktop/output.svg", "wb") as svgFile:
-                svgFile.write(svgData)
-                svgFile.close()
-        except Exception as e:
-            logging.error(e)
-
 
 class System(object):
     """
@@ -535,11 +524,3 @@ def convertRegionName(name):
                 nextUpper = False
             converted.append(char)
     return u"".join(converted)
-
-
-# this is for testing:
-if __name__ == "__main__":
-    map = Map("Providence", "Providence.svg")
-    s = map.systems["I7S-1S"]
-    s.setStatus(states.ALARM)
-    logging.error(map.svg)
