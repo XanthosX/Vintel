@@ -579,12 +579,9 @@ class MainWindow(QtWidgets.QMainWindow):
             scrollPosition = self.initialMapPosition 
 
         self.mapView.setHtml(content)
-        #self.mapView.page().mainFrame().setScrollPosition(scrollPosition)
-        #self.mapView.page().setLinkDelegationPolicy(QWebPage.DelegateAllLinks)
-
         # Make sure we have positioned the window before we nil the initial position;
         # even though we set it, it may not take effect until the map is fully loaded
-        #scrollPosition = self.mapView.page().mainFrame().scrollPosition()
+        scrollPosition = self.mapView.page().scrollPosition()
         self.scrollPosition = self.setMapScrollPosition(scrollPosition)
         scrollPosition = self.getMapScrollPosition()
 		

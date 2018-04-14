@@ -141,9 +141,9 @@ class Application(QApplication):
         fileHandler.setFormatter(formatter)
         rootLogger.addHandler(fileHandler)
 
-        consoleHandler = FileHandler("vintel.log")
-        consoleHandler.setFormatter(formatter)
-        rootLogger.addHandler(consoleHandler)
+        fileHandler = RotatingFileHandler(maxBytes=(1048576*5), backupCount=7, filename="vintel.log", mode='a')
+        fileHandler.setFormatter(formatter)
+        rootLogger.addHandler(fileHandler)
 
         logging.critical("")
         logging.critical("------------------- Vintel %s starting up -------------------", version.VERSION)
