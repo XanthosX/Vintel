@@ -8,7 +8,7 @@
 #  (at your option) any later version.									  #
 #																		  #
 #  This program is distributed in the hope that it will be useful,		  #
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of		  #
+#  but WITHOUT ANY WARRANTYf without even the implied warranty of		  #
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the		  #
 #  GNU General Public License for more details.							  #
 #																		  #
@@ -25,6 +25,7 @@ import requests
 import time
 import six
 import logging 
+import pyttsx3
 
 from collections import namedtuple
 from PyQt5.QtCore import QThread
@@ -69,9 +70,9 @@ class SoundManager(six.with_metaclass(Singleton)):
         return self.platformSupportsSpeech() or gPygletAvailable
 
     def platformSupportsSpeech(self):
-        if self._soundThread.isDarwin:
+        if self._soundThread.isDarwin or self._soundThread.usePyTTS:
             return True
-        return False
+        return True
 
     def setUseSpokenNotifications(self, newValue):
         if newValue is not None:
@@ -83,11 +84,13 @@ class SoundManager(six.with_metaclass(Singleton)):
         self.soundVolume = max(0, min(100, newValue))
         self._soundThread.setVolume(self.soundVolume)
 
-    def playSound(self, name="alarm", message="", abbreviatedMessage=""):
+    def playSound(self, name="alarm", message="Incoming enemies", abbreviatedMessage="red alert"):
         """ Schedules the work, which is picked up by SoundThread.run()
         """
         if name is False:
             name = "alarm"
+            message = "this is a test"
+            abbreviatedMessage = "test"
         if self.soundAvailable and self.soundActive:
             if self.useSpokenNotifications:
                 audioFile = None
@@ -103,12 +106,9 @@ class SoundManager(six.with_metaclass(Singleton)):
     #  Inner class handle audio playback without blocking the UI
     #
 
-    class SoundThread(QThread):
+    class SoundThread(QThread): 
+        usePyTTS = True 
         queue = None
-        useGoogleTTS = False
-        useVoiceRss = False
-        VOICE_RSS_API_KEY = '896a7f61ec5e478cba856a78babab79c'
-        GOOGLE_TTS_API_KEY = ''
         isDarwin = sys.platform.startswith("darwin")
         volume = 25
 
@@ -119,8 +119,11 @@ class SoundManager(six.with_metaclass(Singleton)):
             if gPygletAvailable:
                 self.player = media.Player()
             else:
-                self.player = None
+                self.player = None	
+            if self.usePyTTS:
+                self.speech_engine = pyttsx3.init()
             self.active = True
+            
 
 
         def setVolume(self, volume):
@@ -139,6 +142,7 @@ class SoundManager(six.with_metaclass(Singleton)):
                         self.playAudioFile(audioFile, False)
                         logging.error("SoundThread: sorry, speech not yet implemented on this platform")
                 elif audioFile is not None:
+                    print(audioFile)
                     self.playAudioFile(audioFile, False)
 
         def quit(self):
@@ -151,10 +155,11 @@ class SoundManager(six.with_metaclass(Singleton)):
 
 
         def speak(self, message):
-            if self.useGoogleTTS:
-                self.audioExtractToMp3(inputText=message)  # experimental
-            elif self.useVoiceRss:
-                self.playTTS(message)  # experimental
+            if self.usePyTTS:
+                self.speech_engine.say(message)  # experimental
+                self.speech_engine.setProperty('volume',self.volume/100.0)
+                self.speech_engine.setProperty('rate',130)
+                self.speech_engine.runAndWait()
             elif self.isDarwin:
                 self.darwinSpeak(message)
             else:
@@ -186,54 +191,6 @@ class SoundManager(six.with_metaclass(Singleton)):
                 os.system("say [[volm {0}]] '{1}'".format(float(self.volume) / 100.0, message))
             except Exception as e:
                 logging.error("SoundThread.darwinSpeak exception: %s", e)
-
-        #
-        #  Experimental text-to-speech stuff below
-        #
-
-        # VoiceRss
-
-        def playTTS(self, inputText=''):
-            try:
-                mp3url = 'http://api.voicerss.org/?c=WAV&key={self.VOICE_RSS_API_KEY}&src={inputText}&hl=en-us'.format(
-                    **locals())
-                self.playAudioFile(requests.get(mp3url, stream=True).raw)
-                time.sleep(.5)
-            except requests.exceptions.RequestException as e:
-                logging.error('playTTS error: %s', str(e))
-
-        # google_tts
-
-        def audioExtractToMp3(self, inputText='', args=None):
-            # This accepts :
-            #   a dict,
-            #   an audio_args named tuple
-            #   or arg parse object
-            audioArgs = namedtuple('audio_args', ['language', 'output'])
-            if args is None:
-                args = audioArgs(language='en', output=open('output.mp3', 'w'))
-            if type(args) is dict:
-                args = audioArgs(language=args.get('language', 'en'), output=open(args.get('output', 'output.mp3'), 'w'))
-            # Process inputText into chunks
-            # Google TTS only accepts up to (and including) 100 characters long texts.
-            # Split the text in segments of maximum 100 characters long.
-            combinedText = self.splitText(inputText)
-
-            # Download chunks and write them to the output file
-            for idx, val in enumerate(combinedText):
-                mp3url = "http://translate.google.com/translate_tts?tl=%s&q=%s&total=%s&idx=%s&ie=UTF-8&client=t&key=%s" % (
-                args.language, requests.utils.quote(val), len(combinedText), idx, self.GOOGLE_TTS_API_KEY)
-                headers = {"Host": "translate.google.com", "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_1)"}
-                sys.stdout.write('.')
-                sys.stdout.flush()
-                if len(val) > 0:
-                    try:
-                        args.timeout.write(requests.get(mp3url, headers=headers).content)
-                        time.sleep(.5)
-                    except requests.exceptions.RequestException as e:
-                        logging.error('audioExtractToMp3 error: %s', e)
-            args.output.close()
-            return args.output.name
 
         def splitText(self, inputText, maxLength=100):
             """

@@ -5,3 +5,4 @@
 *.exe
 src/dist/*
 src/build/*
+*.log

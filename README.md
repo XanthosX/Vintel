@@ -6,7 +6,7 @@
 
 Visual intel chat analysis, planning and notification application for [EVE Online](http://www.eveonline.com). Gathers status through in-game intelligence channels on all known hostiles and presents all the data on a [dotlan](http://evemaps.dotlan.net/map/Cache#npc24) generated regional map. The map is annotated in real-time as players report intel in monitored chat channels.
 
-Vintel is written with Python 3.6, using PyQt5 for the application presentation layer, BeautifulSoup4 for SVG parsing, and Pyglet for audio playback.
+Vintel is written with Python 3.6, using PyQt5 for the application presentation layer, BeautifulSoup4 for SVG parsing, and Pyglet+pyttsx3 for audio playback.
 
 ### News
 _The current release version of Vintel [can be found here](https://github.com/bperian/vintel/releases).  Windows distributions are now available for download with this release._
@@ -57,24 +57,12 @@ To use this feature: click on a pilot in the local pilot list and then type the 
 
 To run or build from the source you need the following packages installed on your machine. Most, if not all, can be installed from the command line using package management software such as "pip". Mac and Linux both come with pip installed, Windows users may need to install [cygwin](https://www.cygwin.com) to get pip. Of course all the requirements also have downoad links.
 
-The packages required are:
-- Python 3.6.x
-https://www.python.org/downloads/
-- PyQt5x
-http://www.riverbankcomputing.com/software/pyqt/download
-- BeautifulSoup 4
-https://pypi.python.org/pypi/beautifulsoup4
-- Pyglet 
-https://bitbucket.org/pyglet/pyglet/wiki/Download
-pyglet is used to play the sound – If it is not available the sound option will be disabled.
-- Requests 2
-https://pypi.python.org/pypi/requests
-- Six for python 3 compatibility https://pypi.python.org/pypi/six
+The packages requirements are defined in `setup.py` file 
 
 ## Building the Vintel Standalone Package
 
- - The standalone is created using pyinstaller. All media files and the .spec-file with the configuration for pyinstaller are included in the source repo. cx_freeze can be found here: https://pypi.python.org/pypi/cx_Freeze. 
- - xecute "python setup.py build". If everything went correctly you should get a dist folder that contains the standalone executable + required files.
+ - The standalone is created using cx_freeze. All media files and the setup.py file with the configuration for cx_freeze are included in the source repo. cx_freeze can be found here: https://pypi.python.org/pypi/cx_Freeze. 
+ - execute "python setup.py build". If everything went correctly you should get a dist folder that contains the standalone executable + required files.
 
 ## FAQ
 
@@ -82,17 +70,13 @@ https://pypi.python.org/pypi/requests
 
 Vintel is licensed under the [GPLv3](http://www.gnu.org/licenses/gpl-3.0.html).
 
-**Vintel does not play sounds - is there a remedy for this?**
-
-The most likely cause of this is that pyglet is not installed.
-
 **A litte bit to big for such a little tool.**
 
 The .exe ships with the complete environment and needed libs. You could save some space using the the source code instead.
 
 **What platforms are supported?**
 
-Vintel runs on Mac (OS X), Windows and Linux. Mac and Windows standalone packages are provided with each release. Linux users are advised to install all the requirements listed above then download and run from source.
+Vintel runs on Mac (OS X), Windows and Linux. Windows standalone packages are provided with each release. Linux and Mac users are advised to install all the requirements listed above then download and run from source.
 
 **What file system permissions does Vintel need?**
 
@@ -107,31 +91,23 @@ Vintel looks for a new version at startup and loads dynamic infomation (i.e., ju
 
 **Vintel does not find my chatlogs or is not showing changes to chat when it should. What can I do?**
 
-Vintel looks for your chat logs in ~\EVE\logs\chatlogs and ~\DOCUMENTS\EVE\logs\chatlogs. Logging must be enabled in the EVE client options. You can set this path on your own by giving it to Vintel at startup. For this you have to start it on the command line and call the program with the path to the logs.
+Vintel looks for your chat logs in ~\EVE\logs\chatlogs and ~\DOCUMENTS\EVE\logs\chatlogs , game logs in  ~\EVE\logs\gamelogs and ~\DOCUMENTS\EVE\logs\gamelogs
+Logging must be enabled in the EVE client options. You can set this path on your own by giving it to Vintel at startup. For this you have to start it on the command line and call the program with the path to the logs.
 
 Examples:
 
-`win> vintel-1.0.exe "d:\strange\path\EVE\logs\chatlogs"`
+`win> vintel.exe "d:\strange\path\EVE\logs\chatlogs"  "d:\strange\path\EVE\logs\gamelogs"` 
 
     – or –
 
-`linux and mac> python vintel.py "/home/user/myverypecialpath/EVE/logs/chatlogs"`
+`linux and mac> python vintel.py "/home/user/myverypecialpath/EVE/logs/chatlogs" "/home/user/myverypecialpath/EVE/logs/gamelogs"`
 
-**Vintel does not start! What can I do?**
-
-Please try to delete Vintel's Cache. It is located in the EVE-directory where the chatlogs are in. If your chatlogs are in \Documents\EVE\logs\chatlogs Vintel writes the cachte to \Documents\EVE\vintel
 
 **Vintel takes many seconds to start up; what are some of the causes and what can I do about it?**
 
 Vintel asks the operating system to notifiy when a change has been made to the ChatLogs directory - this will happen when a new log is created or an existing one is updated. In response to this notification, Vintel examines all of the files in the directory to analysze the changes. If you have a lot of chat logs this can make Vintel slow to scan for file changes. Try perodically moving all the chatlogs out of the ChatLogs directory (zip them up and save them somewhere else if you think you may need them some day).
 
-**Vintel complains about missing dll files on Windows at app launch, is there a workaround for this?**
 
-Yes there is! There is a bit of a mix up going on with the latest pyinstaller and the Microsoft developer dlls. Here is a link to help illuminate the issue https://github.com/pyinstaller/pyinstaller/issues/1974
-
-You can visit Microsoft's web site to download the developer dlls https://www.microsoft.com/en-in/download/details.aspx?id=5555.
-
-You can also read a more technical treatment of the issue here http://www.tomshardware.com/answers/id-2417960/msvcr100-dll-32bit-64bit.html
 
 **How can I resolve the "empty certificate data" error?**
 
@@ -139,7 +115,7 @@ Do not use the standalone EXE, install the environment and use the sourcecode di
 
 **Vintel is misbehaving and I dont know why - how can I easily help diagnose problems with Vintel**
 
-Vintel writes its own set of logs to the \Documents\EVE\vintel\vintel directory. A new log is created as the old one fills up to its maximum size setting. Each entry inside the log file is time-stamped. These logs are emitted in real-time so you can watch the changes to the file as you use the app.
+Vintel writes its own set of logs to the \Documents\EVE\vintel\vintel directory and in the application directory vintel.log . A new log is created as the old one fills up to its maximum size setting. Each entry inside the log file is time-stamped. These logs are emitted in real-time so you can watch the changes to the file as you use the app.
 
 **I love Vintel - how can I help?**
 
@@ -148,3 +124,4 @@ If you are technically inclined and have a solid grasp of Python, [contact the p
 **I'm not a coder, how can I help?**
 
 Your feedback is needed! Use the program for a while, then come back [here and create issues](https://github.com/bperian/vintel/issues). Record anything you think about Vintel - bugs, frustrations, and ideas to make it better.
+ISK donations to [Blitz Arkaral](https://zkillboard.com/character/95517727/) are of course welcome. 
