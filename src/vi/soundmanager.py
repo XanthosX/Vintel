@@ -26,6 +26,7 @@ import time
 import six
 import logging 
 import pyttsx3
+from win32com.server.util import wrap
 
 from collections import namedtuple
 from PyQt5.QtCore import QThread

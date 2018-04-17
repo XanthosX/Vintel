@@ -1,6 +1,8 @@
 from setuptools import  find_packages
 from cx_Freeze import  setup, Executable
 
+
+
 import sys
 base = None  
 
@@ -13,7 +15,7 @@ os.environ['TCL_LIBRARY'] = os.path.join(PYTHON_INSTALL_DIR, 'tcl', 'tcl8.6')
 os.environ['TK_LIBRARY'] = os.path.join(PYTHON_INSTALL_DIR, 'tcl', 'tk8.6')
 
 
-executables = [Executable("vintel.py", base=base,icon="icon.ico")]
+executables = [Executable("vintel.py", base="Win32GUI",icon="icon.ico")]
 
 packages = ["idna","appdirs","packaging.version","packaging.specifiers","packaging","pyglet","pyqt5","pyttsx3"]
 
