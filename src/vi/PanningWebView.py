@@ -1,10 +1,5 @@
-
 from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEnginePage
-from PyQt5.QtGui import *
-from PyQt5 import QtCore
-from PyQt5.QtCore import QPoint,pyqtSignal, QUrl
-
-from PyQt5.QtCore import QEvent
+from PyQt5.QtCore import QPoint,pyqtSignal, QUrl, QEvent
 
 class WebEnginePage(QWebEnginePage):
     mapLinkClicked = pyqtSignal(QUrl) 
@@ -13,7 +8,7 @@ class WebEnginePage(QWebEnginePage):
             self.mapLinkClicked.emit(url)
             return False
         return True
-    def javaScriptConsoleMessage(self, msg, line, source):
+    def javaScriptConsoleMessage(self, level, msg, line, source):
         # supress Javascript warnings and uncaught ReferenceError exceptions for JS functions
         pass
 		

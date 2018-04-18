@@ -6,3 +6,6 @@
 src/dist/*
 src/build/*
 *.log
+avbin64.dll
+avbin32.dll
+avbin.dll

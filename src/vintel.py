@@ -33,7 +33,7 @@ from pkg_resources import resource_filename
 from vi.cache.cache import Cache
 from PyQt5.QtWidgets import QApplication, QMessageBox
 from PyQt5 import QtGui, QtWidgets
-
+import PyQt5
 
 def exceptHook(exceptionType, exceptionValue, tracebackObject):
     """

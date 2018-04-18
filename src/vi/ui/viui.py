@@ -22,7 +22,7 @@ import sys
 import time
 import six
 import requests
-import webbrowser
+
 
 
 import vi.PanningWebView
@@ -30,11 +30,10 @@ import vi.version
 from vi.ui.ChatEntryWidget import ChatEntryWidget
 from pkg_resources import resource_string, resource_stream, resource_filename
 import logging
-from PyQt5 import QtGui, uic, QtCore, QtWidgets
-from PyQt5.QtCore import QPoint, pyqtSignal
+from PyQt5 import uic, QtCore, QtWidgets
+from PyQt5.QtCore import QPoint, pyqtSignal, QTimer
 from PyQt5.QtWidgets import QMessageBox, QAction, QActionGroup, QStyleOption, QStyle
-from PyQt5.QtWebEngineWidgets import QWebEnginePage
-from PyQt5.QtGui import *
+from PyQt5.QtGui import QPainter, QIcon, QPixmap
 
 from vi import amazon_s3, evegate
 from vi import dotlan, filewatcher
@@ -66,16 +65,16 @@ class MainWindow(QtWidgets.QMainWindow):
             self.setStyleSheet("QWidget { background-color: %s; }" % backGroundColor)
         uic.loadUi(resource_stream(__name__, 'MainWindow.ui'), self)
         self.setWindowTitle("Vintel " + vi.version.VERSION + "{dev}".format(dev="-SNAPSHOT" if vi.version.SNAPSHOT else ""))
-        self.taskbarIconQuiescent = QtGui.QIcon(resource_filename(__name__,'res/logo_small.png'))
-        self.taskbarIconWorking = QtGui.QIcon(resource_filename(__name__,'res/logo_small_green.png'))
+        self.taskbarIconQuiescent = QIcon(resource_filename(__name__,'res/logo_small.png'))
+        self.taskbarIconWorking = QIcon(resource_filename(__name__,'res/logo_small_green.png'))
         self.setWindowIcon(self.taskbarIconQuiescent)
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
 
         self.pathToLogs = pathToLogs
         self.pathToGameLogs = pathToGameLogs 
-        self.mapTimer = QtCore.QTimer(self)
+        self.mapTimer = QTimer(self)
         self.mapTimer.timeout.connect(self.updateMapView)
-        self.clipboardTimer = QtCore.QTimer(self)
+        self.clipboardTimer = QTimer(self)
         self.oldClipboardContent = ""
         self.trayIcon = trayIcon
         self.trayIcon.activated.connect(self.systemTrayActivated)
@@ -744,7 +743,7 @@ class MainWindow(QtWidgets.QMainWindow):
         infoDialog = QtWidgets.QDialog(self)
         uic.loadUi(resource_stream(__name__,"Info.ui"), infoDialog)
         infoDialog.versionLabel.setText(u"Version: {0}".format(vi.version.VERSION))
-        infoDialog.logoLabel.setPixmap(QtGui.QPixmap(resource_filename(__name__,"res/logo.png")))
+        infoDialog.logoLabel.setPixmap(QPixmap(resource_filename(__name__,"res/logo.png")))
         infoDialog.closeButton.clicked.connect(infoDialog.accept)
         infoDialog.show()
 

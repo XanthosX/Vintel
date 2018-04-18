@@ -55,24 +55,25 @@ To use this feature: click on a pilot in the local pilot list and then type the 
 
 ## Running Vintel from Source
 
-To run or build from the source you need the following packages installed on your machine. Most, if not all, can be installed from the command line using package management software such as "pip". Mac and Linux both come with pip installed, Windows users may need to install [cygwin](https://www.cygwin.com) to get pip. Of course all the requirements also have downoad links.
-
-The packages requirements are defined in `setup.py` file 
+- The packages requirements are defined in `setup.py` file
+- Pyglet may require https://github.com/AVbin/AVbin installed; this can be easily confirmed by checking the `vintel.log` file for errors regarding `avbin` not loaded. 
+ 
 
 ## Building the Vintel Standalone Package
 
- - The standalone is created using cx_freeze. All media files and the setup.py file with the configuration for cx_freeze are included in the source repo. cx_freeze can be found here: https://pypi.python.org/pypi/cx_Freeze. 
- - execute "python setup.py build". If everything went correctly you should get a dist folder that contains the standalone executable + required files.
+ - The standalone is created using pyinstaller. All media files and the setup.py file with the configuration for pyinstaller are included in the source repo. 
+   pyinstaller can be installed through pip like this `pip install pyinstaller` 
+ - execute "pyinstaller vintel.spec vintel.py". If everything went correctly you should get a dist folder that contains the standalone executable + required files.
 
 ## FAQ
 
-**License?**
+**License**
 
 Vintel is licensed under the [GPLv3](http://www.gnu.org/licenses/gpl-3.0.html).
 
 **A litte bit to big for such a little tool.**
 
-The .exe ships with the complete environment and needed libs. You could save some space using the the source code instead.
+- The .exe ships with the complete environment and needed libs. You could save some space using the the source code instead.
 
 **What platforms are supported?**
 

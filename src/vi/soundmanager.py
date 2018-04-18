@@ -38,6 +38,7 @@ from vi.singleton import Singleton
 
 global gPygletAvailable
 
+
 try:
     import pyglet
     from pyglet import media
@@ -143,7 +144,6 @@ class SoundManager(six.with_metaclass(Singleton)):
                         self.playAudioFile(audioFile, False)
                         logging.error("SoundThread: sorry, speech not yet implemented on this platform")
                 elif audioFile is not None:
-                    print(audioFile)
                     self.playAudioFile(audioFile, False)
 
         def quit(self):
