@@ -24,16 +24,16 @@ import logging
 import traceback
 
 from logging.handlers import RotatingFileHandler
-from logging import StreamHandler
+from logging import FileHandler
 
-from PyQt4 import QtGui
 from vi import version
 from vi.ui import viui, systemtray
 from vi.cache import cache
-from vi.resources import resourcePath
+from pkg_resources import resource_filename
 from vi.cache.cache import Cache
-from PyQt4.QtGui import QApplication, QMessageBox
-
+from PyQt5.QtWidgets import QApplication, QMessageBox
+from PyQt5 import QtGui, QtWidgets
+import PyQt5
 
 def exceptHook(exceptionType, exceptionValue, tracebackObject):
     """
@@ -55,11 +55,18 @@ class Application(QApplication):
 
     def __init__(self, args):
         super(Application, self).__init__(args)
-
+        
         # Set up paths
         chatLogDirectory = ""
+        gameLogDirectory = ""
+
+        if sys.platform != "win32" and len(sys.argv) <=2: 
+            print("Usage: python vintel.py <chatlogsdir> <gamelogsdir>")
+            sys.exit(1)
         if len(sys.argv) > 1:
             chatLogDirectory = sys.argv[1]
+        if len(sys.argv) > 2:
+            gameLogDirectory = sys.argv[2] 		    
 
         if not os.path.exists(chatLogDirectory):
             if sys.platform.startswith("darwin"):
@@ -77,8 +84,29 @@ class Application(QApplication):
                 chatLogDirectory = os.path.join(documentsPath, "EVE", "logs", "Chatlogs")
         if not os.path.exists(chatLogDirectory):
             # None of the paths for logs exist, bailing out
-            QMessageBox.critical(None, "No path to Logs", "No logs found at: " + chatLogDirectory, "Quit")
+            QMessageBox.critical(None, "No path to Logs", "No logs found at: " + chatLogDirectory, QMessageBox.Ok)
             sys.exit(1)
+		
+
+        if not os.path.exists(gameLogDirectory):
+            if sys.platform.startswith("darwin"):
+                gameLogDirectory = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "logs", "Gamelogs")
+                if not os.path.exists(gameLogDirectory):
+                    gameLogDirectory = os.path.join(os.path.expanduser("~"), "Library", "Application Support", "Eve Online",
+                                          "p_drive", "User", "My Documents", "EVE", "logs", "Gamelogs")
+            elif sys.platform.startswith("linux"):
+                gameLogDirectory = os.path.join(os.path.expanduser("~"), "EVE", "logs", "Gamelogs")
+            elif sys.platform.startswith("win32") or sys.platform.startswith("cygwin"):
+                import ctypes.wintypes
+                buf = ctypes.create_unicode_buffer(ctypes.wintypes.MAX_PATH)
+                ctypes.windll.shell32.SHGetFolderPathW(0, 5, 0, 0, buf)
+                documentsPath = buf.value
+                gameLogDirectory = os.path.join(documentsPath, "EVE", "logs", "Gamelogs")
+        if not os.path.exists(gameLogDirectory):
+            # None of the paths for logs exist, bailing out
+            QMessageBox.critical(None, "No path to Logs", "No logs found at: " + gameLogDirectory, QMessageBox.Ok)
+            sys.exit(1)
+		
 
         # Setting local directory for cache and logging
         vintelDirectory = os.path.join(os.path.dirname(os.path.dirname(chatLogDirectory)), "vintel")
@@ -90,7 +118,7 @@ class Application(QApplication):
         if not os.path.exists(vintelLogDirectory):
             os.mkdir(vintelLogDirectory)
 
-        splash = QtGui.QSplashScreen(QtGui.QPixmap(resourcePath("vi/ui/res/logo.png")))
+        splash = QtWidgets.QSplashScreen(QtGui.QPixmap(resource_filename(__name__,"vi/ui/res/logo.png")))
 
         vintelCache = Cache()
         logLevel = vintelCache.getFromCache("logging_level")
@@ -113,9 +141,9 @@ class Application(QApplication):
         fileHandler.setFormatter(formatter)
         rootLogger.addHandler(fileHandler)
 
-        consoleHandler = StreamHandler()
-        consoleHandler.setFormatter(formatter)
-        rootLogger.addHandler(consoleHandler)
+        fileHandler = RotatingFileHandler(maxBytes=(1048576*5), backupCount=7, filename="vintel.log", mode='a')
+        fileHandler.setFormatter(formatter)
+        rootLogger.addHandler(fileHandler)
 
         logging.critical("")
         logging.critical("------------------- Vintel %s starting up -------------------", version.VERSION)
@@ -126,7 +154,8 @@ class Application(QApplication):
 
         trayIcon = systemtray.TrayIcon(self)
         trayIcon.show()
-        self.mainWindow = viui.MainWindow(chatLogDirectory, trayIcon, backGroundColor)
+
+        self.mainWindow = viui.MainWindow(chatLogDirectory, gameLogDirectory, trayIcon, backGroundColor, logging)
         self.mainWindow.show()
         self.mainWindow.raise_()
         splash.finish(self.mainWindow)
