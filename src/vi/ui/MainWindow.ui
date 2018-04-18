@@ -384,7 +384,7 @@
     <addaction name="providenceCatchCompactRegionAction"/>
     <addaction name="chooseRegionAction"/>
     <addaction name="separator"/>
-    <addaction name="jumpbridgeDataAction"/>
+    <addaction name="jumpBridgeDataAction"/>
    </widget>
    <widget class="QMenu" name="menuWindow">
     <property name="title">
@@ -533,7 +533,7 @@
     <string>Sound Setup...</string>
    </property>
   </action>
-  <action name="jumpbridgeDataAction">
+  <action name="jumpBridgeDataAction">
    <property name="text">
     <string>Jumpbridge Data...</string>
    </property>

@@ -190,7 +190,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.frameButton.clicked.connect(self.changeFrameless)
         self.quitAction.triggered.connect(self.close)
         self.trayIcon.quit_sig.connect(self.close)
-        self.jumpbridgeDataAction.triggered.connect(self.showJumbridgeChooser)
+        self.jumpBridgeDataAction.triggered.connect(self.showJumpBridgeChooser)
         #self.mapView.page().scrollRequested.connect(self.mapPositionChanged)
         self.mapView.page().mapLinkClicked.connect( self.mapLinkClicked)
         self.mapView.loadFinished.connect(self.handleLoadFinished)
@@ -616,10 +616,10 @@ class MainWindow(QtWidgets.QMainWindow):
         chooser.show()
 
 
-    def showJumbridgeChooser(self):
+    def showJumpBridgeChooser(self):
         url = self.cache.getFromCache("jumpbridge_url")
-        chooser = JumpbridgeChooser(self, url)
-        chooser.setJumpbridgeURL.emit(self.setJumpbridges)
+        chooser = JumpBridgeChooser(self, url)
+        chooser.setJumpbridgeURL.connect(self.setJumpbridges)
         chooser.show()
 
 
@@ -883,6 +883,7 @@ class RegionChooser(QtWidgets.QDialog):
 
     def saveClicked(self):
         text = six.text_type(self.regionNameField.toPlainText())
+        text = text.strip()
         text = dotlan.convertRegionName(text)
         self.regionNameField.setPlainText(text)
         correct = False
@@ -989,7 +990,7 @@ class SystemChat(QtWidgets.QDialog):
 
 
 
-class JumpbridgeChooser(QtWidgets.QDialog):
+class JumpBridgeChooser(QtWidgets.QDialog):
     setJumpbridgeURL = pyqtSignal(str)
 
     def __init__(self, parent, url):
@@ -999,7 +1000,7 @@ class JumpbridgeChooser(QtWidgets.QDialog):
         self.cancelButton.clicked.connect( self.accept)
         self.urlField.setText(url)
         # loading format explanation from textfile
-        with open(resource_filename(__name__,"jumpbridgeformat.txt")) as f:
+        with open(resource_filename(__name__,"../../docs/jumpbridgeformat.txt")) as f:
             self.formatInfoField.setPlainText(f.read())
 
 

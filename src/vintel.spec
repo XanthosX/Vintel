@@ -12,7 +12,9 @@ a = Analysis(['vintel.py'],
              binaries=[('avbin.dll','.'),],
              datas=[
 			        ('vi/ui/*.ui','vi/ui'),
-			        ('vi/ui/res/*','vi/ui/res')],
+			        ('vi/ui/res/*','vi/ui/res'),
+					('docs/*','docs')
+			],
              hiddenimports=[
 				'pyttsx3.drivers',
 				'pyttsx3.drivers.dummy',
