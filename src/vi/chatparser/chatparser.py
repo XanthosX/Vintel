@@ -184,14 +184,16 @@ class ChatParser(object):
         timestamp = None
         try:
             timestamp = datetime.datetime.strptime(timeStr.decode(), "%Y.%m.%d %H:%M:%S")
-        except: 
-            pass 
+        except Exception as e:
+            logging.critical(e)
+            return 
         # Finding the username of the poster
         userEnds = line.decode().find(">")
         if userEnds == -1:
             userEnds = len(line)-1
         username = line[timeEnds + 1:userEnds].strip()
 
+        status = states.IGNORE
         # Finding the pure message
         text = line[userEnds + 1:].strip()  # text will the text to work an
         if username in ("EVE-System", "EVE System"):
@@ -207,8 +209,8 @@ class ChatParser(object):
                 self.locations[charname]["timestamp"] = timestamp
                 message = Message("", "", timestamp, charname, [system, ], "", "", status)
 
-        # Solving new game logs user location
-        if message == []:
+        # Solving new game logs user location where case
+        if message == [] and status != states.LOCATION:
             text = line[timeEnds:].decode().strip().replace("*", "").lower()
             if "(none)" in text and "jumping" in text and "to" in text:
                 system = text.split("to")[1].strip().upper()
@@ -249,7 +251,10 @@ class ChatParser(object):
                 line = line.encode('utf-8', 'ignore')
                 if len(line) > 2:
                     message = None
-                    message = self._lineToMessage(line, roomname)
+                    if roomname == "Local":
+                        message = self._parseLocal(path, line)   
+                    else:
+                        message = self._lineToMessage(line, roomname)
                     if message:
                         messages.append(message)
         else:
