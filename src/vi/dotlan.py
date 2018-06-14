@@ -23,6 +23,7 @@
 
 import math
 import time
+import datetime
 import six
 import requests
 import logging
@@ -37,7 +38,6 @@ JB_COLORS = ("800000", "808000", "BC8F8F", "ff00ff", "c83737", "FF6347", "917c6f
              "88aa00" "FFE4E1", "008080", "00BFFF", "4682B4", "00FF7F", "7FFF00", "ff6600",
              "CD5C5C", "FFD700", "66CDAA", "AFEEEE", "5F9EA0", "FFDEAD", "696969", "2F4F4F")
 
-
 class DotlanException(Exception):
     def __init__(self, *args, **kwargs):
         Exception.__init__(self, *args, **kwargs)
@@ -47,8 +47,6 @@ class Map(object):
     """
         The map including all information from dotlan
     """
-
-    DOTLAN_BASIC_URL = u"http://evemaps.dotlan.net/svg/{0}.svg"
 
     @property
     def svg(self):
@@ -90,17 +88,40 @@ class Map(object):
                         "without the map.\n\nRemember the site for possible " \
                         "updates: https://github.com/Xanthos-Eve/vintel".format(type(e), six.text_type(e))
                     raise DotlanException(t)
+
         # Create soup from the svg
-        self.soup = BeautifulSoup(svg, 'html.parser')
-        self.systems = self._extractSystemsFromSoup(self.soup)
-        self.systemsById = {}
-        for system in self.systems.values():
-            self.systemsById[system.systemId] = system
-        self._prepareSvg(self.soup, self.systems)
-        self._connectNeighbours()
-        self._jumpMapsVisible = False
-        self._statisticsVisible = False
-        self.marker = self.soup.select("#select_marker")[0]
+        try:
+            self.soup = BeautifulSoup(svg, 'html.parser')
+            self.systems = self._extractSystemsFromSoup(self.soup)
+            self._cleanSoup(self.soup)
+            self.setJumpbridgesVisibility(False)
+            self.systemsById = {}
+            for system in self.systems.values():
+                self.systemsById[system.systemId] = system
+            self._prepareSvg(self.soup, self.systems)
+            self._connectNeighbours()
+            self._jumpMapsVisible = False
+            self._statisticsVisible = False
+            self.marker = self.soup.select("#select_marker")[0]
+        except Exception as e:
+            # Could get hung up on a bad retreival forever
+            cache.deleteFromCache("map_" + self.region)
+            raise
+
+    def _cleanSoup(self, soup):
+        try:
+            legend = soup.find('g', id='legend')
+            copyright = legend.find('text', class_='lc')
+            copyright.string = '(C) by Wollari & CCP'
+            for t in legend.select("text"):
+                if t.text == '= Alliance':
+                    t.string = '= Intel Time'
+                elif t.text == '= Sov. Lvl' or t.text == 'Z':
+                    t.string = ''
+                elif t.text == 'YYYYY (Z)':
+                    t.string = 'YYYYY'
+        except:
+                pass
 
     def _extractSystemsFromSoup(self, soup):
         systems = {}
@@ -118,16 +139,21 @@ class Map(object):
                 continue
             for element in symbol.select(".sys"):
                 name = element.select("text")[0].text.strip().upper()
+                # could be region name or sov. info
+                secondaryInfo = element.select("text")[1].text.strip().upper()
                 mapCoordinates = {}
                 for keyname in ("x", "y", "width", "height"):
                     mapCoordinates[keyname] = float(uses[symbolId][keyname])
                 mapCoordinates["center_x"] = (mapCoordinates["x"] + (mapCoordinates["width"] / 2))
                 mapCoordinates["center_y"] = (mapCoordinates["y"] + (mapCoordinates["height"] / 2))
+                # Modify href to just be system name to deal better with out of region systems drawn on map
+                # leaving slash for now, not sure about effects on provi/catch combined maps
+                symbol.a['xlink:href'] = "/" + name
                 try:
                     transform = uses[symbolId]["transform"]
                 except KeyError:
                     transform = "translate(0,0)"
-                systems[name] = System(name, element, self.soup, mapCoordinates, transform, systemId)
+                systems[name] = System(name, secondaryInfo, element, self.soup, mapCoordinates, transform, systemId)
         return systems
 
     def _prepareSvg(self, soup, systems):
@@ -191,7 +217,7 @@ class Map(object):
                 startSystem.addNeighbour(stopSystem)
 
     def _getSvgFromDotlan(self, region):
-        url = self.DOTLAN_BASIC_URL.format(region)
+        url = dotlan_url(region)
         content = requests.get(url).text
         return content
 
@@ -263,7 +289,15 @@ class Map(object):
 
     def changeJumpbridgesVisibility(self):
         newStatus = False if self._jumpMapsVisible else True
+        return self.setJumpbridgesVisibility(newStatus)
+
+    def setJumpbridgesVisibility(self, newStatus):
         value = "visible" if newStatus else "hidden"
+        try:
+            for jb in self.soup.select('path.jb'):
+                jb['visibility'] = value
+        except:
+                pass
         for line in self.soup.select(".jumpbridge"):
             line["visibility"] = value
         self._jumpMapsVisible = newStatus
@@ -285,25 +319,32 @@ class System(object):
         A System on the Map
     """
 
-    ALARM_COLORS = [(60 * 4, "#FF0000", "#FFFFFF"), (60 * 10, "#FF9B0F", "#FFFFFF"), (60 * 15, "#FFFA0F", "#000000"),
-                    (60 * 25, "#FFFDA2", "#000000"), (60 * 60 * 24, "#FFFFFF", "#000000")]
-    ALARM_COLOR = ALARM_COLORS[0][1]
     UNKNOWN_COLOR = "#FFFFFF"
     CLEAR_COLOR = "#59FF6C"
+    ALARM_COLORS = [
+        # Alarmed systems change colors based on how long ago the alarm was received
+        # maxDiff (seconds), system background color, timer text color
+        (60 * 4, "#FF0000", "#FFFFFF"),
+        (60 * 10, "#FF9B0F", "#FFFFFF"),
+        (60 * 15, "#FFFA0F", "#000000"),
+        (60 * 25, "#FFFDA2", "#000000"),
+        (60 * 60 * 24, "#FFFFFF", "#000000")
+    ]
 
-    def __init__(self, name, svgElement, mapSoup, mapCoordinates, transform, systemId):
+    def __init__(self, name, secondaryInfo, svgElement, mapSoup, mapCoordinates, transform, systemId):
         self.status = states.UNKNOWN
         self.name = name
+        self.secondaryInfo = secondaryInfo
         self.svgElement = svgElement
         self.mapSoup = mapSoup
         self.origSvgElement = svgElement
         self.rect = svgElement.select("rect")[0]
         self.secondLine = svgElement.select("text")[1]
-        self.lastAlarmTime = 0
+        self.lastAlarmTime = datetime.datetime.min
         self.messages = []
         self.setStatus(states.UNKNOWN)
         self.__locatedCharacters = []
-        self.backgroundColor = "#FFFFFF"
+        self.backgroundColor = self.UNKNOWN_COLOR
         self.mapCoordinates = mapCoordinates
         self.systemId = systemId
         self.transform = transform
@@ -418,16 +459,22 @@ class System(object):
         if self in system._neighbours:
             system._neigbours.remove(self)
 
-    def setStatus(self, newStatus):
+    def setStatus(self, newStatus, statusTime = None):
+        if None == statusTime:
+            statusTime = evegate.currentEveTime()
         if newStatus == states.ALARM:
-            self.lastAlarmTime = time.time()
+            self.lastAlarmTime = statusTime
             if "stopwatch" not in self.secondLine["class"]:
                 self.secondLine["class"].append("stopwatch")
             self.secondLine["alarmtime"] = self.lastAlarmTime
             self.secondLine["style"] = "fill: #FFFFFF;"
-            self.setBackgroundColor(self.ALARM_COLOR)
+            delta = (evegate.currentEveTime() - self.lastAlarmTime).total_seconds()
+            for maxDiff, alarmColor, secondLineColor in self.ALARM_COLORS:
+                if delta < maxDiff:
+                    self.setBackgroundColor(alarmColor)
+                    break
         elif newStatus == states.CLEAR:
-            self.lastAlarmTime = time.time()
+            self.lastAlarmTime = statusTime
             self.setBackgroundColor(self.CLEAR_COLOR)
             self.secondLine["alarmtime"] = 0
             if "stopwatch" not in self.secondLine["class"]:
@@ -457,7 +504,7 @@ class System(object):
     def update(self):
         # state changed?
         if (self.status == states.ALARM):
-            alarmTime = time.time() - self.lastAlarmTime
+            alarmTime = (evegate.currentEveTime() - self.lastAlarmTime).total_seconds()
             for maxDiff, alarmColor, secondLineColor in self.ALARM_COLORS:
                 if alarmTime < maxDiff:
                     if self.backgroundColor != alarmColor:
@@ -468,7 +515,7 @@ class System(object):
                         self.secondLine["style"] = "fill: {0};".format(secondLineColor)
                     break
         if self.status in (states.ALARM, states.WAS_ALARMED, states.CLEAR):  # timer
-            diff = math.floor(time.time() - self.lastAlarmTime)
+            diff = (evegate.currentEveTime() - self.lastAlarmTime).total_seconds()
             minutes = int(math.floor(diff / 60))
             seconds = int(diff - minutes * 60)
             string = "{m:02d}:{s:02d}".format(m=minutes, s=seconds)
@@ -483,9 +530,18 @@ class System(object):
             self.secondLine.string = string
 
 
+def dotlan_url(region):
+    """ Generate a DOTLAN url from the specified region name (which will be normalized to a DOTLAN region name)
+    """
+    url = u"http://evemaps.dotlan.net/svg/{0}.svg".format(convertRegionName(region))
+    jb_id = Cache().getConfigValue("dotlan_jb_id")
+    if jb_id:
+         url = url + u"?path=B:{0}".format(jb_id)
+    return url
+
 def convertRegionName(name):
     """
-        Converts a (system)name to the format that dotland uses
+        Converts a (system)name to the format that dotlan uses
     """
     converted = []
     nextUpper = False

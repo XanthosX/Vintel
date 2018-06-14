@@ -33,19 +33,28 @@ ERROR = -1
 NOT_EXISTS = 0
 EXISTS = 1
 
+def esi_post(uri, data):
+    try:
+        url = 'https://esi.evetech.net/latest' + uri + '/?datasource=tranquility&language=en-us'
+        return requests.post(url, data=json.dumps(data), headers={'accept': 'application/json', 'Content-Type': 'application/json'})
+    except Exception as e:
+        logging.error('ESI POST FAILED URI: [%s] data: [%s]' % (uri, repr(data)))
+
+def esi_get(uri, **kwargs):
+    try:
+        url = 'https://esi.evetech.net/latest' + uri + '/?datasource=tranquility&language=en-us'
+        if 'query' in kwargs:
+            url += '&' + kwargs['query']
+        return requests.get(url, headers={'accept': 'application/json', 'Content-Type': 'application/json'})
+    except Exception as e:
+        logging.error('ESI GET FAILED URI: [%s] data: [%s]' % (uri))
 
 def charnameToId(name):
     """ Uses the EVE API to convert a charname to his ID
     """
     try:
-        url = "https://api.eveonline.com/eve/CharacterID.xml.aspx"
-        content = requests.get(url, params={'names': name}).text
-        soup = BeautifulSoup(content, 'html.parser')
-        rowSet = soup.select("rowset")[0]
-        for row in rowSet.select("row"):
-            if row["name"] == name:
-                return int(row["characterid"])
-
+        content = esi_post('/universe/ids', [name]).json()
+        return int(content['characters'][0]['id'])
     except Exception as e:
         logging.error("Exception turning charname to id via API: %s", e)
         # fallback! if there is a problem with the API, we use evegate
@@ -81,16 +90,13 @@ def namesToIds(names):
     try:
         # not in cache? asking the EVE API
         if len(apiCheckNames) > 0:
-            url = "https://api.eveonline.com/eve/CharacterID.xml.aspx"
-            content = requests.get(url, params={'names': ','.join(apiCheckNames)}).text
-            soup = BeautifulSoup(content, 'html.parser')
-            rowSet = soup.select("rowset")[0]
-            for row in rowSet.select("row"):
-                data[row["name"]] = row["characterid"]
+            response = esi_post('/universe/ids', apiCheckNames).json()
+            for row in response.json()['characters']:
+                data[row["name"]] = row['id']
             # writing the cache
             for name in apiCheckNames:
                 cacheKey = "_".join(("id", "name", name))
-                cache.putIntoCache(cacheKey, data[name], 60 * 60 * 24 * 365)
+                cache.putIntoCache(cacheKey, data[name], cache.PERMANENT)
     except Exception as e:
         logging.error("Exception during namesToIds: %s", e)
     return data
@@ -118,17 +124,14 @@ def idsToNames(ids):
 
     try:
         # call the EVE-Api for those entries we didn't have in the cache
-        url = "https://api.eveonline.com/eve/CharacterName.xml.aspx"
         if len(apiCheckIds) > 0:
-            content = requests.get(url, params={'ids': ','.join(apiCheckIds)}).text
-            soup = BeautifulSoup(content, 'html.parser')
-            rowSet = soup.select("rowset")[0]
-            for row in rowSet.select("row"):
-                data[row["characterid"]] = row["name"]
+            response = esi_get('/characters/names', query=','.join(apiCheckIds))
+            for row in response.json():
+                data[row["character_id"]] = row["character_name"]
             # and writing into cache
             for id in apiCheckIds:
                 cacheKey = u"_".join(("name", "id", six.text_type(id)))
-                cache.putIntoCache(cacheKey, data[id], 60 * 60 * 24 * 365)
+                cache.putIntoCache(cacheKey, data[id], cache.PERMANENT)
     except Exception as e:
         logging.error("Exception during idsToNames: %s", e)
 
@@ -152,27 +155,6 @@ def getAvatarForPlayer(charname):
     return avatar
 
 
-def checkPlayername(charname):
-    """ Checking on evegate for an exiting playername
-        returns 1 if exists, 0 if not and -1 if an error occured
-    """
-    baseUrl = "https://gate.eveonline.com/Profile/"
-
-    queryCharname = requests.utils.quote(charname)
-    url = baseUrl + queryCharname
-    result = -1
-
-    try:
-        urlopen(url)
-        result = 1
-    except HTTPError as e:
-        if ("404") in str(e):
-            result = 0
-    except Exception as e:
-        logging.error("Exception on checkPlayername: %s", e)
-    return result
-
-
 def currentEveTime():
     """ Returns the current eve-time as a datetime.datetime
     """
@@ -185,37 +167,21 @@ def eveEpoch():
     return time.mktime(datetime.datetime.utcnow().timetuple())
 
 
-def getCharinfoForCharId(charId):
-    cacheKey = u"_".join(("playerinfo_id_", six.text_type(charId)))
-    cache = Cache()
-    soup = cache.getFromCache(cacheKey)
-    if soup is not None:
-        soup = BeautifulSoup(soup, 'html.parser')
-    else:
-        try:
-            charId = int(charId)
-            url = "https://api.eveonline.com/eve/CharacterInfo.xml.aspx"
-            content = requests.get(url, params={'characterID': charId}).text
-            soup = BeautifulSoup(content, 'html.parser')
-            cacheUntil = datetime.datetime.strptime(soup.select("cacheduntil")[0].text, "%Y-%m-%d %H:%M:%S")
-            diff = cacheUntil - currentEveTime()
-            cache.putIntoCache(cacheKey, str(soup), diff.seconds)
-        except requests.exceptions.RequestException as e:
-            # We get a 400 when we pass non-pilot names for KOS check so fail silently for that one only
-            if (e.response.status_code != 400):
-                logging.error("Exception during getCharinfoForCharId: %s", str(e))
-    return soup
-
-
 def getCorpidsForCharId(charId):
     """ Returns a list with the ids if the corporation history of a charId
     """
+    cacheKey = u"_".join(("playerinfo_id_", six.text_type(charId)))
+    cache = Cache()
+    data = cache.getFromCache(cacheKey)
+    if data:
+        return data
+
     data = []
-    soup = getCharinfoForCharId(charId)
-    for rowSet in soup.select("rowset"):
-        if rowSet["name"] == "employmentHistory":
-            for row in rowSet.select("row"):
-                data.append(row["corporationid"])
+    response = esi_get('/characters/%s/corporationhistory' % (charId))
+    for row in response.json():
+        data.append(row["corporation_id"])
+
+    cache.putIntoCache(cacheKey, data, cache.ONE_DAY)
     return data
 
 
@@ -234,15 +200,11 @@ def getSystemStatistics():
     try:
         if jumpData is None:
             jumpData = {}
-            url = "https://api.eveonline.com/map/Jumps.xml.aspx"
-            content = requests.get(url).text
-            soup = BeautifulSoup(content, 'html.parser')
+            response = esi_get("/universe/system_jumps")
+            for row in response.json():
+                jumpData[int(row["system_id"])] = int(row["ship_jumps"])
 
-            for result in soup.select("result"):
-                for row in result.select("row"):
-                    jumpData[int(row["solarsystemid"])] = int(row["shipjumps"])
-
-            cacheUntil = datetime.datetime.strptime(soup.select("cacheduntil")[0].text, "%Y-%m-%d %H:%M:%S")
+            cacheUntil = datetime.datetime.strptime(response.headers['expires'], '%a, %d %b %Y %H:%M:%S GMT')
             diff = cacheUntil - currentEveTime()
             cache.putIntoCache(cacheKey, json.dumps(jumpData), diff.seconds)
         else:
@@ -254,17 +216,13 @@ def getSystemStatistics():
 
         if systemData is None:
             systemData = {}
-            url = "https://api.eveonline.com/map/Kills.xml.aspx"
-            content = requests.get(url).text
-            soup = BeautifulSoup(content, 'html.parser')
+            response = esi_get("/universe/system_kills")
+            for row in response.json():
+                systemData[int(row["system_id"])] = {"ship": int(row["ship_kills"]),
+                                                     "faction": int(row["npc_kills"]),
+                                                     "pod": int(row["pod_kills"])}
 
-            for result in soup.select("result"):
-                for row in result.select("row"):
-                    systemData[int(row["solarsystemid"])] = {"ship": int(row["shipkills"]),
-                                                             "faction": int(row["factionkills"]),
-                                                             "pod": int(row["podkills"])}
-
-            cacheUntil = datetime.datetime.strptime(soup.select("cacheduntil")[0].text, "%Y-%m-%d %H:%M:%S")
+            cacheUntil = datetime.datetime.strptime(response.headers['expires'], '%a, %d %b %Y %H:%M:%S GMT')
             diff = cacheUntil - currentEveTime()
             cache.putIntoCache(cacheKey, json.dumps(systemData), diff.seconds)
         else:
@@ -312,7 +270,7 @@ SHIPNAMES = (u'ABADDON', u'ABSOLUTION', u'AEON', u'AMARR SHUTTLE', u'ANATHEMA', 
              u'CERBERUS', u'CHARON', u'CHEETAH', u'CHIMERA', u'CLAW', u'CLAYMORE', u'COERCER', u'CONDOR', u'CORMORANT',
              u'COVETOR', u'CRANE', u'CROW', u'CRUCIFIER', u'CRUOR', u'CRUSADER', u'CURSE', u'CYCLONE', u'CYNABAL',
              u'DAMNATION', u'DAREDEVIL', u'DEIMOS', u'DEVOTER', u'DOMINIX', u'DRAKE', u'DRAMIEL', u'EAGLE', u'EIDOLON',
-             u'ENIGMA', u'ENYO', u'EOS', u'EREBUS', u'ERIS', u'EXECUTIONER', u'EXEQUROR', u'EXEQUROR NAVY ISSUE',
+             u'ENDURANCE', u'ENIGMA', u'ENYO', u'EOS', u'EREBUS', u'ERIS', u'EXECUTIONER', u'EXEQUROR', u'EXEQUROR NAVY ISSUE',
              u'FALCON', u'FEDERATION NAVY COMET', u'FENRIR', u'FEROX', u'FLYCATCHER', u'GALLENTE SHUTTLE', u'GILA',
              u'GOLD MAGNATE', u'GOLEM', u'GRIFFIN', u'GUARDIAN', u'HARBINGER', u'HARPY', u'HAWK', u'HEL', u'HELIOS',
              u'HERETIC', u'HERON', u'HOARDER', u'HOUND', u'HUGINN', u'HULK', u'HURRICANE', u'HYENA', u'HYPERION',
@@ -325,7 +283,8 @@ SHIPNAMES = (u'ABADDON', u'ABSOLUTION', u'AEON', u'AMARR SHUTTLE', u'ANATHEMA', 
              u'NOMAD', u'NYX', u'OBELISK', u'OCCATOR', u'OMEN', u'OMEN NAVY ISSUE', u'ONEIROS', u'ONYX',
              u'OPUX DRAGOON YACHT', u'OPUX LUXURY YACHT', u'ORACLE', u'ORCA', u'OSPREY', u'OSPREY NAVY ISSUE',
              u'PALADIN', u'PANTHER', u'PHANTASM', u'PHANTOM', u'PHOBOS', u'PHOENIX', u'PILGRIM', u'POLARIS CENTURION',
-             u'POLARIS INSPECTOR', u'POLARIS LEGATUS', u'PROBE', u'PROCURER', u'PROPHECY', u'PRORATOR', u'PROVIDENCE',
+             u'POLARIS INSPECTOR', u'POLARIS LEGATUS', u'PORPOISE', u'PROBE', u'PROCURER', u'PROPHECY', u'PRORATOR',
+             u'PROSPECT', u'PROVIDENCE',
              u'PROWLER', u'PUNISHER', u'PURIFIER', u'RAGNAROK', u'RAPIER', u'RAPTOR', u'RATTLESNAKE', u'RAVEN',
              u'RAVEN NAVY ISSUE', u'RAVEN STATE ISSUE', u'REAPER', u'REDEEMER', u'REPUBLIC FLEET FIRETAIL',
              u'RETRIBUTION', u'RETRIEVER', u'REVELATION', u'RHEA', u'RIFTER', u'ROKH', u'ROOK', u'RORQUAL', u'RUPTURE',
@@ -335,7 +294,11 @@ SHIPNAMES = (u'ABADDON', u'ABSOLUTION', u'AEON', u'AMARR SHUTTLE', u'ANATHEMA', 
              u'TEMPEST TRIBAL ISSUE', u'THANATOS', u'THORAX', u'THRASHER', u'TORMENTOR', u'TRISTAN', u'TYPHOON',
              u'VAGABOND', u'VARGUR', u'VELATOR', u'VENGEANCE', u'VEXOR', u'VEXOR NAVY ISSUE', u'VIATOR', u'VIGIL',
              u'VIGILANT', u'VINDICATOR', u'VISITANT', u'VULTURE', u'WIDOW', u'WOLF', u'WORM', u'WRAITH', u'WREATHE',
-             u'WYVERN', u'ZEALOT', u'CAPSULE',)
+             u'WYVERN', u'ZEALOT', u'CAPSULE',
+             u'BOMBER', u'LOGI',
+             u'T3D', u'JACKDAW', u'SVIPUL', u'CONFESSOR', u'HECTATE',
+             u'T3C', u'TENGU', u'LOKI', u'LEGION', u'PROTEUS',
+             u'STORK', u'BIFROST', u'PONTIFEX', u'MAGUS')
 SHIPNAMES = sorted(SHIPNAMES, key=lambda x: len(x), reverse=True)
 
 NPC_CORPS = (u'Republic Justice Department', u'House of Records', u'24th Imperial Crusade', u'Template:NPC corporation',

@@ -20,32 +20,36 @@
 import datetime
 import os
 import time
+import logging
 import six
 if six.PY2:
     from io import open
 
 from bs4 import BeautifulSoup
-from vi import states
+from vi import states, evegate
 from PyQt4.QtGui import QMessageBox
-
 
 from .parser_functions import parseStatus
 from .parser_functions import parseUrls, parseShips, parseSystems
 
 # Names the local chatlogs could start with (depends on l10n of the client)
-LOCAL_NAMES = ("Local", "Lokal", six.text_type("\u041B\u043E\u043A\u0430\u043B\u044C\u043D\u044B\u0439"))
+LOCAL_NAMES = ("local", "lokal", six.text_type("\u041B\u043E\u043A\u0430\u043B\u044C\u043D\u044B\u0439").lower())
 
 
 class ChatParser(object):
     """ ChatParser will analyze every new line that was found inside the Chatlogs.
     """
 
-    def __init__(self, path, rooms, systems):
+    def HEADER_SIZE(self): return 13
+    def REPLAY_SIZE(self): return 500                   # retreive up to 500 lines from a logfile when starting up
+
+    def __init__(self, path, rooms, allSystems, messageExpirySecs):
         """ path = the path with the logs
             rooms = the rooms to parse"""
+        self.messageExpirySecs = messageExpirySecs
         self.path = path  # the path with the chatlog
-        self.rooms = rooms  # the rooms to watch (excl. local)
-        self.systems = systems  # the known systems as dict name: system
+        self.rooms = [r.lower() for r in rooms]  # the rooms to watch (excl. local)
+        self.allSystems = allSystems  # the known systems as dict name: system
         self.fileData = {}  # informations about the files in the directory
         self.knownMessages = []  # message we allready analyzed
         self.locations = {}  # informations about the location of a char
@@ -65,7 +69,7 @@ class ChatParser(object):
         lines = None
         content = ""
         filename = os.path.basename(path)
-        roomname = filename[:-20]
+        roomname = filename[:-20].lower()
         try:
             with open(path, "r", encoding='utf-16-le') as f:
                 content = f.read()
@@ -103,6 +107,9 @@ class ChatParser(object):
             timestamp = datetime.datetime.strptime(timeStr, "%Y.%m.%d %H:%M:%S")
         except ValueError:
             return None
+        if (evegate.currentEveTime() - timestamp).total_seconds() > self.messageExpirySecs:
+            # logging.debug('ignoring message from ' + timeStr + " || " + str((evegate.currentEveTime() - timestamp).total_seconds()) )
+            return None
         # finding the username of the poster
         userEnds = line.find(">")
         username = line[timeEnds + 1:userEnds].strip()
@@ -136,7 +143,7 @@ class ChatParser(object):
             continue
         while parseUrls(rtext):
             continue
-        while parseSystems(self.systems, rtext, systems):
+        while parseSystems(self.allSystems, rtext, systems):
             continue
         parsedStatus = parseStatus(rtext)
         status = parsedStatus if parsedStatus is not None else states.ALARM
@@ -154,9 +161,6 @@ class ChatParser(object):
         message.message = six.text_type(rtext)
         message.status = status
         self.knownMessages.append(message)
-        if systems:
-            for system in systems:
-                system.messages.append(message)
         return message
 
     def _parseLocal(self, path, line):
@@ -202,14 +206,12 @@ class ChatParser(object):
         # EvE names the file like room_20140913_200737.txt, so we don't need
         # the last 20 chars
         filename = os.path.basename(path)
-        roomname = filename[:-20]
+        roomname = filename[:-20].lower()
         if path not in self.fileData:
             # seems eve created a new file. New Files have 12 lines header
-            self.fileData[path] = {"lines": 13}
+            self.fileData[path] = {"lines": self.HEADER_SIZE()}
         oldLength = self.fileData[path]["lines"]
         lines = self.addFile(path)
-        if path in self.ignoredPaths:
-            return []
         for line in lines[oldLength - 1:]:
             line = line.strip()
             if len(line) > 2:
@@ -222,6 +224,22 @@ class ChatParser(object):
                     messages.append(message)
         return messages
 
+    def rewind(self):
+        """On region change or startup, rewind files to replay info from logfiles"""
+        for path in self.fileData:
+            newsize = self.fileData[path]["lines"] - self.REPLAY_SIZE()
+            if newsize < self.HEADER_SIZE():
+                newsize = self.HEADER_SIZE()
+            logging.info("Rewinding %d lines from %s" % (self.fileData[path]["lines"]-newsize, path))
+            self.fileData[path]["lines"] = newsize
+        return self.fileData
+
+    def expire(self):
+        for m in self.knownMessages:
+            if (evegate.currentEveTime() - m.timestamp).total_seconds() > self.messageExpirySecs:
+                self.knownMessages.pop(0)
+            else:
+                break
 
 class Message(object):
     def __init__(self, room, message, timestamp, user, systems, upperText, plainText="", status=states.ALARM):
@@ -235,6 +253,7 @@ class Message(object):
         self.plainText = plainText  # plain text of the message, as posted
         # if you add the message to a widget, please add it to widgets
         self.widgets = []
+        self.isOld = False
 
     def __key(self):
         return (self.room, self.plainText, self.timestamp, self.user)

@@ -36,13 +36,20 @@
 """
 
 import six
+import logging
+import re
 
 import vi.evegate as evegate
 from bs4 import BeautifulSoup
 from bs4.element import NavigableString
 from vi import states
+from vi.systems import SYSTEMS
 
-CHARS_TO_IGNORE = ("*", "?", ",", "!", ".")
+# Do not ignore <>/" which keep html from word matching on replacement
+# Do not ignore ? which triggers status change to request
+CHARS_TO_IGNORE_REGEX = '[*,!.()]'
+
+REPLACE_WORD_REGEX = r'(^|(?<=[^0-9a-zA-Z])){0}((?=[^0-9a-zA-Z_])|$)'
 
 
 def textReplace(element, newText):
@@ -58,16 +65,14 @@ def textReplace(element, newText):
 def parseStatus(rtext):
     texts = [t for t in rtext.contents if isinstance(t, NavigableString)]
     for text in texts:
+        upperText = re.sub(CHARS_TO_IGNORE_REGEX, ' ', text.strip().upper()) # KEEP QUESTION MARK?
         upperText = text.strip().upper()
-        originalText = upperText
-        for char in CHARS_TO_IGNORE:
-            upperText = upperText.replace(char, "")
         upperWords = upperText.split()
-        if (("CLEAR" in upperWords or "CLR" in upperWords) and not originalText.endswith("?")):
+        if ("?" in upperText):
+            return states.REQUEST
+        elif ("CLEAR" in upperWords or "CLR" in upperWords):
             return states.CLEAR
         elif ("STAT" in upperWords or "STATUS" in upperWords):
-            return states.REQUEST
-        elif ("?" in originalText):
             return states.REQUEST
         elif (text.strip().upper() in ("BLUE", "BLUES ONLY", "ONLY BLUE" "STILL BLUE", "ALL BLUES")):
             return states.CLEAR
@@ -75,22 +80,26 @@ def parseStatus(rtext):
 
 def parseShips(rtext):
     def formatShipName(text, word):
-        newText = u"""<span style="color:#d95911;font-weight:bold"> {0}</span>"""
-        text = text.replace(word, newText.format(word))
+        newText = u"""<span style="color:#d95911;font-weight:bold">{0}</span>"""
+        # Only do replacements at word boundaries
+        text = re.sub(REPLACE_WORD_REGEX.format(word), newText.format(word), text)
         return text
 
     texts = [t for t in rtext.contents if isinstance(t, NavigableString)]
     for text in texts:
+        upperText = re.sub(CHARS_TO_IGNORE_REGEX, ' ', text.upper())
         upperText = text.upper()
         for shipName in evegate.SHIPNAMES:
             if shipName in upperText:
                 hit = True
                 start = upperText.find(shipName)
                 end = start + len(shipName)
-                if ((start > 0 and upperText[start - 1] not in (" ", "X")) or (
-                        end < len(upperText) - 1 and upperText[end] not in ("S", " "))):
+                if ( (start > 0 and re.match('[A-Z0-9]', upperText[start - 1]))
+                        or (end < len(upperText) and re.match('[A-RT-Z0-9]', upperText[end])) ):
                     hit = False
                 if hit:
+                    if (end < len(upperText) and 'S' == upperText[end]):
+                        end += 1
                     shipInText = text[start:end]
                     formatted = formatShipName(text, shipInText)
                     textReplace(text, formatted)
@@ -98,29 +107,32 @@ def parseShips(rtext):
 
 
 def parseSystems(systems, rtext, foundSystems):
-    
+
     systemNames = systems.keys()
-    
+
     # words to ignore on the system parser. use UPPER CASE
-    WORDS_TO_IGNORE = ("IN", "IS", "AS")
+    WORDS_TO_IGNORE = ("IN", "IS", "AS", "OR", "NV", "TO", "ME", "HE", "SHE", "YOU", "ARE",
+        "ON", "HAS", "OF", "IT", "GET", "IF", "THE", "HOT", "OH", "OK", "GJ", "AND", "MY",
+        "SAY", "ANY", "NO", "FOR", "OUT", "WH", "MAN", "PART", "AT", "AN" )
 
     def formatSystem(text, word, system):
         newText = u"""<a style="color:#CC8800;font-weight:bold" href="mark_system/{0}">{1}</a>"""
-        text = text.replace(word, newText.format(system, word))
+        # Only do replacements at word boundaries: "no cyno onboard"  would replace both "no"s in the first pass and then find a "cy"
+        text = re.sub(REPLACE_WORD_REGEX.format(word), newText.format(system, word), text)
         return text
 
-    texts = [t for t in rtext.contents if isinstance(t, NavigableString) and len(t)]    
-    for wtIdx, text in enumerate(texts):
-        worktext = text
-        for char in CHARS_TO_IGNORE:
-            worktext = worktext.replace(char, "")
-            
+    texts = [t for t in rtext.contents if isinstance(t, NavigableString) and len(t)]
+    for text in texts:
+        worktext = re.sub(CHARS_TO_IGNORE_REGEX, ' ', text)
+
         # Drop redundant whitespace so as to not throw off word index
         worktext = ' '.join(worktext.split())
         words = worktext.split(" ")
 
         for idx, word in enumerate(words):
-            
+
+            matchKey = None
+
             # Is this about another a system's gate?
             if len(words) > idx + 1:
                 if words[idx+1].upper() == 'GATE':
@@ -133,42 +145,22 @@ def parseSystems(systems, rtext, foundSystems):
                         # '_____ GATE' mentioned in message, which is not what we're
                         # interested in, so go to checking next word.
                         continue
-            
+
             upperWord = word.upper()
             if upperWord != word and upperWord in WORDS_TO_IGNORE: continue
             if upperWord in systemNames:  # - direct hit on name
-                foundSystems.add(systems[upperWord])  # of the system?
-                formattedText = formatSystem(text, word, upperWord)
-                textReplace(text, formattedText)
-                return True
-            elif 1 < len(upperWord) < 5:  # - upperWord < 4 chars.
+                matchKey = systems[upperWord]['name']
+            elif 1 < len(upperWord) < 5:  # - upperWord 2-4 chars.
                 for system in systemNames:  # system begins with?
                     if system.startswith(upperWord):
-                        foundSystems.add(systems[system])
-                        formattedText = formatSystem(text, word, system)
-                        textReplace(text, formattedText)
-                        return True
-            elif "-" in upperWord and len(upperWord) > 2:  # - short with - (minus)
-                upperWordParts = upperWord.split("-")  # (I-I will match I43-IF3)
-                for system in systemNames:
-                    systemParts = system.split("-")
-                    if (len(upperWordParts) == 2 and len(systemParts) == 2 and len(upperWordParts[0]) > 1 and len(
-                            upperWordParts[1]) > 1 and len(systemParts[0]) > 1 and len(systemParts[1]) > 1 and len(
-                            upperWordParts) == len(systemParts) and upperWordParts[0][0] == systemParts[0][0] and
-                                upperWordParts[1][0] == systemParts[1][0]):
-                        foundSystems.add(systems[system])
-                        formattedText = formatSystem(text, word, system)
-                        textReplace(text, formattedText)
-                        return True
-            elif len(upperWord) > 1:  # what if F-YH58 is named FY?
-                for system in systemNames:
-                    clearedSystem = system.replace("-", "")
-                    if clearedSystem.startswith(upperWord):
-                        foundSystems.add(systems[system])
-                        formattedText = formatSystem(text, word, system)
-                        textReplace(text, formattedText)
-                        return True
-                        
+                        matchKey = systems[system]['name']
+                        break
+            if matchKey:
+                foundSystems.add(matchKey)
+                formattedText = formatSystem(text, word, matchKey)
+                textReplace(text, formattedText)
+                return True
+
     return False
 
 
