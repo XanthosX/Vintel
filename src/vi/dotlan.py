@@ -48,7 +48,7 @@ class Map(object):
         The map including all information from dotlan
     """
 
-    DOTLAN_BASIC_URL = u"http://evemaps.dotlan.net/svg/{0}.svg"
+    DOTLAN_BASIC_URL = u"http://evemaps.dotlan.net/svg/{0}.dark.svg"
 
     @property
     def svg(self):
@@ -288,7 +288,7 @@ class System(object):
     ALARM_COLORS = [(60 * 4, "#FF0000", "#FFFFFF"), (60 * 10, "#FF9B0F", "#FFFFFF"), (60 * 15, "#FFFA0F", "#000000"),
                     (60 * 25, "#FFFDA2", "#000000"), (60 * 60 * 24, "#FFFFFF", "#000000")]
     ALARM_COLOR = ALARM_COLORS[0][1]
-    UNKNOWN_COLOR = "#FFFFFF"
+    UNKNOWN_COLOR = "#000000"
     CLEAR_COLOR = "#59FF6C"
 
     def __init__(self, name, svgElement, mapSoup, mapCoordinates, transform, systemId):
