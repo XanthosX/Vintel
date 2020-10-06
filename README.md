@@ -4,6 +4,12 @@
 </p>
 # Welcome To Vintel
 
+This a modified version of Vintel for use in Providence by REKKINGCREW and associates. Broken & KOS features have been ripped out, preferred defaults have been set, and blinding white light has been abandoned in favour of a dark mode. The original documentation from the Provibloc developer follows.
+
+Chad VanGaalen
+
+==============================
+
 Visual intel chat analysis, planning and notification application for [EVE Online](http://www.eveonline.com). Gathers status through in-game intelligence channels on all known hostiles and presents all the data on a [dotlan](http://evemaps.dotlan.net/map/Cache#npc24) generated regional map. The map is annotated in real-time as players report intel in monitored chat channels.
 
 Vintel is written with Python 2.7, using PyQt4 for the application presentation layer, BeautifulSoup4 for SVG parsing, and Pyglet for audio playback.

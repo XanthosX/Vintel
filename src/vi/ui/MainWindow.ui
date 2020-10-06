@@ -346,11 +346,8 @@
    </property>
    <widget class="QMenu" name="menu">
     <property name="title">
-     <string>Kos</string>
+     <string>Vintel</string>
     </property>
-    <addaction name="autoScanIntelAction"/>
-    <addaction name="kosClipboardActiveAction"/>
-    <addaction name="separator"/>
     <addaction name="infoAction"/>
     <addaction name="separator"/>
     <addaction name="quitAction"/>
@@ -361,7 +358,6 @@
     </property>
     <addaction name="showChatAction"/>
     <addaction name="chooseChatRoomsAction"/>
-    <addaction name="showChatAvatarsAction"/>
    </widget>
    <widget class="QMenu" name="menuSound">
     <property name="title">
