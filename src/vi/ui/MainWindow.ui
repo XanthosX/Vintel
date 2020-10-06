@@ -358,6 +358,7 @@
     </property>
     <addaction name="showChatAction"/>
     <addaction name="chooseChatRoomsAction"/>
+    <addaction name="showChatAvatarsAction"/>
    </widget>
    <widget class="QMenu" name="menuSound">
     <property name="title">
