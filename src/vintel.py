@@ -19,6 +19,7 @@
 ###########################################################################
 
 import sys
+import qdarkgraystyle
 import os
 import logging
 import traceback
@@ -34,6 +35,7 @@ from vi.resources import resourcePath
 from vi.cache.cache import Cache
 from PyQt4.QtGui import QApplication, QMessageBox
 
+os.environ['QT_API'] = 'pyqt4'
 
 def exceptHook(exceptionType, exceptionValue, tracebackObject):
     """
@@ -136,5 +138,5 @@ class Application(QApplication):
 if __name__ == "__main__":
 
     app = Application(sys.argv)
+    app.setStyleSheet(qdarkgraystyle.load_stylesheet(pyside=False))
     sys.exit(app.exec_())
-

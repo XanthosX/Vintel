@@ -303,7 +303,7 @@ class System(object):
         self.messages = []
         self.setStatus(states.UNKNOWN)
         self.__locatedCharacters = []
-        self.backgroundColor = "#FFFFFF"
+        self.backgroundColor = "#111111"
         self.mapCoordinates = mapCoordinates
         self.systemId = systemId
         self.transform = transform
