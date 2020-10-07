@@ -451,7 +451,7 @@
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>Choose Chatrooms...</string>
+    <string>Select chat channels</string>
    </property>
   </action>
   <action name="showChatAvatarsAction">

@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Chatrooms</string>
+   <string>Chat Channels</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="0" column="0">
@@ -19,7 +19,7 @@
      <item>
       <widget class="QLabel" name="label">
        <property name="text">
-        <string>Enter the chatrooms to watch into the following field. Separate them by comma.</string>
+        <string>Enter the EVE chat channels to watch into the following field. Separate them by comma.</string>
        </property>
        <property name="textFormat">
         <enum>Qt::PlainText</enum>
