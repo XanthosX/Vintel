@@ -38,6 +38,7 @@ from vi import states
 from vi.cache.cache import Cache
 from vi.resources import resourcePath
 from vi.soundmanager import SoundManager
+from vi.PanningWebView import PanningWebView
 from vi.threads import AvatarFindThread, KOSCheckerThread, MapStatisticsThread
 from vi.ui.systemtray import TrayContextMenu
 from vi.chatparser import ChatParser
@@ -411,9 +412,9 @@ class MainWindow(QtGui.QMainWindow):
             self.activateSoundAction.setEnabled(False)
             self.soundSetupAction.setEnabled(False)
             #self.soundButton.setEnabled(False)
-            QMessageBox.warning(None, "Sound disabled",
-                                      "The lib 'pyglet' which is used to play sounds cannot be found, ""so the soundsystem is disabled.\nIf you want sound, please install the 'pyglet' library. This warning will not be shown again.",
-                                      "OK")
+            # QMessageBox.warning(None, "Sound disabled",
+            #                           "The lib 'pyglet' which is used to play sounds cannot be found, ""so the soundsystem is disabled.\nIf you want sound, please install the 'pyglet' library. This warning will not be shown again.",
+            #                           "OK")
         else:
             if newValue is None:
                 newValue = self.activateSoundAction.isChecked()
